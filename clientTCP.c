@@ -43,8 +43,7 @@ int main() {
     }
 
     while (1) {
-        scanf("%s", write_buffer);
-        strcat(write_buffer, "\n");
+        fgets(write_buffer, 128, stdin);
 
         n = write(fd, write_buffer, strlen(write_buffer));
         if (n == -1) {
