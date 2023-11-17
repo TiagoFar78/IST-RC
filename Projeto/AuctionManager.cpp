@@ -6,6 +6,12 @@ int create_file(string file_name) {
     return 0;
 }
 
+int write_on_file(string file_name, string buffer) {
+    return 0;
+}
+
+
+
 /*
  * Return:
  * 1 - user was registered after this login
@@ -14,9 +20,10 @@ int create_file(string file_name) {
  */
 int login(int uID, string password) {
     std::string uID_string = std::to_string(uID);
-    string file_name = uID_string + ".txt";
+    string file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + ".txt";
     if (!file_exists(file_name)) {
         create_file(file_name);
+        write_on_file(file_name, buffer);
         return 1;
     }
 
