@@ -63,17 +63,26 @@ int read_from_file(const string& file_name, string& buffer) {
  */
 int login(int uID, const string& password) {
     string uID_string = to_string(uID);
-    string file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + "_pass.txt";
-    if (!file_exists(file_name)) {
-        create_file(file_name);
-        write_on_file(file_name, password, true);
+
+    string pass_file_name = "ASDIR/USERS/" + uID_string;
+    pass_file_name.append("/" + uID_string);
+    pass_file_name.append("_pass.txt");
+    
+    string login_file_name = "ASDIR/USERS/" + uID_string;
+    login_file_name.append("/" + uID_string);
+    login_file_name.append("_login.txt");
+
+    if (!file_exists(pass_file_name)) {
+        create_file(pass_file_name);
+        write_on_file(pass_file_name, password, true);
+        create_file(login_file_name);
         return 1;
     }
 
     string registered_password;
-    read_from_file(file_name, registered_password);
+    read_from_file(pass_file_name, registered_password);
     if (password == registered_password) {
-        string login_file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + "_login.txt";
+        create_file(login_file_name);
         return 0;
     }
 

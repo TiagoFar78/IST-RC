@@ -1,5 +1,6 @@
 #include <string>
 #include <cassert>
+#include <iostream>
 #include "../AuctionManager.h"
 
 using namespace std;
@@ -14,12 +15,12 @@ int main() {
 
     assert(login(uID, password) == 1);
 
-    string pass_file = "ASDIR/USERS/" + uID;
-    pass_file.append("/" + uID);
+    string pass_file = "ASDIR/USERS/" + to_string(uID);
+    pass_file.append("/" + to_string(uID));
     pass_file.append("_pass.txt");
 
-    string login_file = "ASDIR/USERS/" + uID;
-    login_file.append("/" + uID);
+    string login_file = "ASDIR/USERS/" + to_string(uID);
+    login_file.append("/" + to_string(uID));
     login_file.append("_login.txt");
 
     assert(file_exists(pass_file) == 1);
@@ -32,5 +33,11 @@ int main() {
 
     string password_errada = "SenhaErrada";
     assert(login(uID, password_errada) == -1);
+
+    assert(delete_file(pass_file) == 0);
+    assert(delete_file(login_file) == 0);
+
+    assert(file_exists(pass_file) == 0);
+    assert(file_exists(login_file) == 0);
 
 }

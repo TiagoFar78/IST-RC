@@ -11,7 +11,7 @@ int main() {
     // |                  Teste 1 - Funções de ficheiros                   |
     // #-------------------------------------------------------------------#
 
-    string file_name = "example.txt";
+    string file_name = "example/example.txt";
     
     // Check if file exists
     assert(file_exists(file_name) == 0);
