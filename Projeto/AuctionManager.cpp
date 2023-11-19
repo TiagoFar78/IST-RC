@@ -1,15 +1,58 @@
-int file_exists(string file_name) {
-    return 1;
+#include <iostream>
+#include <fstream>
+
+using namespace std;
+
+int file_exists(const string& file_name) {
+    ifstream file(file_name);
+    return file.good();
 }
 
-int create_file(string file_name) {
+int create_file(const string& file_name) {
+    ofstream file(file_name);
+    return file.is_open() ? 0 : -1;
+}
+
+int delete_file(const string& file_name) {
+    if (remove(file_name.c_str()) != 0) {
+        return -1;
+    }
+
     return 0;
 }
 
-int write_on_file(string file_name, string buffer) {
-    return 0;
+int write_on_file(const string& file_name, const string& buffer, bool clear_file) {
+    ofstream file;
+
+    if (clear_file) {
+        file.open(file_name, ios::out | ios::trunc); // Open the file in truncation mode to clear contents
+    } else {
+        file.open(file_name, ios::app); // Open the file in append mode
+    }
+
+    if (file.is_open()) {
+        file << buffer;
+        return 0;
+    }
+
+    return -1;
 }
 
+int read_from_file(const string& file_name, string& buffer) {
+    ifstream file(file_name);
+    if (file.is_open()) {
+        file.seekg(0, ios::end);
+        streamsize size = file.tellg();
+        file.seekg(0, ios::beg);
+
+        buffer.resize(size);
+        file.read(&buffer[0], size);
+
+        return 0;
+    }
+
+    return -1;
+}
 
 
 /*
@@ -18,17 +61,19 @@ int write_on_file(string file_name, string buffer) {
  * 0 - password is correct match
  * -1 - password is an incorrect match
  */
-int login(int uID, string password) {
-    std::string uID_string = std::to_string(uID);
-    string file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + ".txt";
+int login(int uID, const string& password) {
+    string uID_string = to_string(uID);
+    string file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + "_pass.txt";
     if (!file_exists(file_name)) {
         create_file(file_name);
-        write_on_file(file_name, buffer);
+        write_on_file(file_name, password, true);
         return 1;
     }
 
-    string registered_password = // read do file_name
-    if (strcmp(password, registered_password) == 0) {
+    string registered_password;
+    read_from_file(file_name, registered_password);
+    if (password == registered_password) {
+        string login_file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + "_login.txt";
         return 0;
     }
 
