@@ -1,6 +1,7 @@
 #include <string>
 #include <cassert>
 #include <iostream>
+#include <filesystem>
 #include "../AuctionManager.h"
 
 using namespace std;
@@ -34,10 +35,12 @@ int main() {
     string password_errada = "SenhaErrada";
     assert(login(uID, password_errada) == -1);
 
+    // Limpar o lixo produzido pelo teste
     assert(delete_file(pass_file) == 0);
     assert(delete_file(login_file) == 0);
 
     assert(file_exists(pass_file) == 0);
     assert(file_exists(login_file) == 0);
 
+    filesystem::remove("ASDIR/USERS/" + to_string(uID));
 }

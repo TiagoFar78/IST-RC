@@ -2,6 +2,7 @@
 #include <iostream>
 #include <ostream>
 #include <cassert>
+#include <filesystem>
 #include "../AuctionManager.h"
 
 using namespace std;
@@ -33,4 +34,7 @@ int main() {
     assert(delete_file(file_name) == 0);
 
     assert(file_exists(file_name) == 0);
+
+    // Limpar o lixo produzido pelo teste
+    filesystem::remove("example");
 }

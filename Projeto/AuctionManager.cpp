@@ -1,7 +1,18 @@
 #include <iostream>
 #include <fstream>
+#include <sys/stat.h>
 
 using namespace std;
+
+int getLastIndexOfSlash(const string& s) {
+	for(int i = s.length() - 1; i >= 0; i--) {
+		if (s[i] == '/') {
+			return i;
+        }
+	}
+	
+	return -1;	
+}
 
 int file_exists(const string& file_name) {
     ifstream file(file_name);
@@ -9,8 +20,28 @@ int file_exists(const string& file_name) {
 }
 
 int create_file(const string& file_name) {
-    ofstream file(file_name);
-    return file.is_open() ? 0 : -1;
+    int last_index_of_slash = getLastIndexOfSlash(file_name);
+
+    if (last_index_of_slash == -1) {
+        ofstream file(file_name);
+        file.close();
+        return 0;
+    }
+
+    string folder_name = file_name.substr(0, last_index_of_slash);
+
+    int status = mkdir(folder_name.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+    if (status == 0 || errno == EEXIST) { // EEXIST means the folder already exists
+        ofstream outfile(file_name);
+
+        if (outfile.is_open()) {
+            outfile.close();
+            return 0;
+        }
+    }
+
+    return -1;
 }
 
 int delete_file(const string& file_name) {
