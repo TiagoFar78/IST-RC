@@ -7,7 +7,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#define PORT "58069"
+#define PORT "58029"
 
 int main() {
     printf("server started working\n");
