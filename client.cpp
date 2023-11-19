@@ -113,20 +113,16 @@ int main() {
 
     createUDPSocket();
     createTCPSocket();
-    printf("cheguei1\n");
     while (1) {
         fgets(write_buffer, 128, stdin);
-        printf("cheguei2\n");
         if (strcmp(write_buffer, "stop\n") == 0) {
             break;
         }
 
         string command = strtok(write_buffer, " ");
         if (command == "login\n") {
-            printf("cheguei3\n");
             sendUDP(write_buffer);
         } else if (command == "open\n" || command == "ola\n" ) {
-            printf("cheguei4\n");
             sendTCP(write_buffer);
         }
 
