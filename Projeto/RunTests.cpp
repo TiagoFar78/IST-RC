@@ -3,9 +3,12 @@
 #include <vector>
 #include <string>
 #include <cstring>
+#include <algorithm>
 #include <filesystem>
 
 namespace fs = std::filesystem;
+
+bool compareFunction (std::string a, std::string b) {return a<b;} 
 
 int main() {
     std::vector<std::string> test_files;
@@ -19,13 +22,15 @@ int main() {
         }
     }
 
+    std::sort(test_files.begin(), test_files.end());
+
     // Run each test file
     for (const auto& test_file : test_files) {
         std::cout << "Running test file: " << test_file << " -> ";
 
         std::string test_file_without_extension = test_file.substr(0, test_file.length() - 4);
 
-        std::string compile_command = "g++ AuctionManager.cpp " + test_file + " -o " + test_file_without_extension;
+        std::string compile_command = "g++ -std=c++17 AuctionManager.cpp " + test_file + " -o " + test_file_without_extension;
         std::system(compile_command.c_str());
 
         std::string run_command = test_file_without_extension;

@@ -128,7 +128,26 @@ int login(int uID, const string& password) {
  * -2 - not registered
  */
 int logout(int uID) {
-    // Basta remover o UID do zezoca da lista/hashtable dos gajos logged in
+    string uID_string = to_string(uID);
+
+    string pass_file_name = "ASDIR/USERS/" + uID_string;
+    pass_file_name.append("/" + uID_string);
+    pass_file_name.append("_pass.txt");
+
+    if (!file_exists(pass_file_name)) {
+        return -2;
+    }
+    
+    string login_file_name = "ASDIR/USERS/" + uID_string;
+    login_file_name.append("/" + uID_string);
+    login_file_name.append("_login.txt");
+
+    if (!file_exists(login_file_name)) {
+        return -1;
+    }
+
+    delete_file(login_file_name);
+
     return 0;
 }
 
@@ -140,6 +159,27 @@ int logout(int uID) {
  * -2 - not registered
  */
 int unregister(int uID) {
+    string uID_string = to_string(uID);
+
+    string pass_file_name = "ASDIR/USERS/" + uID_string;
+    pass_file_name.append("/" + uID_string);
+    pass_file_name.append("_pass.txt");
+
+    if (!file_exists(pass_file_name)) {
+        return -2;
+    }
+    
+    string login_file_name = "ASDIR/USERS/" + uID_string;
+    login_file_name.append("/" + uID_string);
+    login_file_name.append("_login.txt");
+
+    if (!file_exists(login_file_name)) {
+        return -1;
+    }
+
+    delete_file(pass_file_name);
+    delete_file(login_file_name);
+
     return 0;
 }
 
