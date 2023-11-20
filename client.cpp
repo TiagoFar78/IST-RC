@@ -9,8 +9,7 @@
 #include <netdb.h>
 #include <string>
 #include <iostream>
-#define UDP_PORT "58028"
-#define TCP_PORT "58029"
+#define PORT "58011"
 
 using namespace std;
 
@@ -22,7 +21,7 @@ struct sockaddr_in udp_addr;
 int tcp_errcode, tcp_socket;
 struct addrinfo tcp_hints,*tcp_res;
 
-char buffer[128];
+
 ssize_t n;
 
 void createUDPSocket() {
@@ -36,7 +35,7 @@ void createUDPSocket() {
     udp_hints.ai_family = AF_INET;
     udp_hints.ai_socktype = SOCK_DGRAM;
 
-    udp_errcode = getaddrinfo("127.0.0.1", UDP_PORT, &udp_hints, &udp_res); 
+    udp_errcode = getaddrinfo("tejo.tecnico.ulisboa.pt", PORT, &udp_hints, &udp_res); 
     if(udp_errcode != 0) {
         printf("Erro nesta bomba - deu erro\n");
         exit(1);
@@ -54,7 +53,7 @@ void createTCPSocket() {
     tcp_hints.ai_family = AF_INET;
     tcp_hints.ai_socktype = SOCK_STREAM;
 
-    tcp_errcode = getaddrinfo("127.0.0.1", TCP_PORT, &tcp_hints, &tcp_res); 
+    tcp_errcode = getaddrinfo("tejo.tecnico.ulisboa.pt", PORT, &tcp_hints, &tcp_res); 
     if(tcp_errcode != 0) {
         printf("Erro nesta bomba - deu erro\n");
         exit(1);
@@ -68,6 +67,7 @@ void createTCPSocket() {
 }
 
 void sendUDP(char* message) {
+    char buffer[128];
     n = sendto(udp_socket, message, strlen(message), 0, udp_res->ai_addr, udp_res->ai_addrlen);
     if (n == -1) {
         printf("Erro nesta bomba - nao escreveu\n");
@@ -82,13 +82,14 @@ void sendUDP(char* message) {
     };
 
     write(1,"echo: ",6); 
-    write(1,buffer,n);
+    write(1, buffer, n);
 
     memset(buffer, 0, 128);
 
 }
 
 void sendTCP(char* message) {
+    char buffer[128];
     n = write(tcp_socket, message, strlen(message));
     if (n == -1) {
         printf("Erro nesta bomba - nao escreveu\n");
@@ -112,27 +113,33 @@ int main() {
     char write_buffer[128];
 
     createUDPSocket();
-    createTCPSocket();
+
     while (1) {
+        char command[128];
+
         fgets(write_buffer, 128, stdin);
         if (strcmp(write_buffer, "stop\n") == 0) {
             break;
         }
+        
+        strcpy(command, write_buffer);
+        strtok(command, " ");
 
-        string command = strtok(write_buffer, " ");
-        if (command == "login\n") {
+        if (!strcmp(command, "login")) {
             sendUDP(write_buffer);
-        } else if (command == "open\n" || command == "ola\n" ) {
+        } else if (!strcmp(command, "open")) {
+            createTCPSocket();
             sendTCP(write_buffer);
+            freeaddrinfo(tcp_res);
+            close(tcp_socket);
         }
 
+        memset(command, 0, 128);
         memset(write_buffer, 0, 128);
     }
 
     freeaddrinfo(udp_res);
-    freeaddrinfo(tcp_res);
     close(udp_socket);
-    close(tcp_socket);
-
+    
     return 0;
 }
