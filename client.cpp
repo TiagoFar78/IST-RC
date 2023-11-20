@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string>
+#include <vector>
 #include <iostream>
 #define PORT "58011"
 
@@ -22,6 +23,82 @@ int tcp_errcode, tcp_socket;
 struct addrinfo tcp_hints,*tcp_res;
 
 ssize_t n;
+string password;
+string uid;
+bool logged_in = false;
+
+vector<string> splitString(string input, char delimiter) {
+    vector<string> result;
+    string current;
+
+    for (size_t i = 0; i < input.length(); ++i) {
+        if (input[i] != delimiter) {
+            current += input[i];
+        }
+
+        if (input[i] == delimiter || i == input.length() - 1) {
+            result.push_back(current);
+            current.clear(); 
+        }
+    }
+
+    return result;
+}
+
+string translateInput(string command, string arguments) {
+    string translated_message;
+    string prefix;
+
+    if (command == "login") {
+        prefix = "LIN ";
+
+    } else if (command == "logout") {
+        prefix = "LOU ";
+        arguments += uid + " " + password;
+
+    } else if (command == "unregister") {
+        prefix = "UNR ";
+        arguments += uid + " " + password;
+    }
+
+    translated_message = prefix + arguments + "\n";
+    return translated_message;
+}
+
+string translateOutput(string message) {
+
+    vector<string> output = splitString(message, ' ');
+
+    string command = output[0];
+    string status = output[1];
+
+    if (command == "RLI") {
+        if (status == "OK\n") {
+            logged_in = true;
+            return "successful login\n";
+
+        } else if (status == "NOK\n") {
+            return "incorrect login attempt\n";
+
+        } else if (status == "REG\n") {
+            return "new user registered\n";
+        }
+
+    } else if (command == "RLO") {
+        if (status == "OK\n") {
+            logged_in = false;
+            return "successful logout\n";
+
+        } else if (status == "NOK\n") {
+            return "user not logged in\n";
+
+        } else if (status == "UNR\n") {
+            return "unknown user\n";
+        }
+    }
+
+    return NULL;
+}
 
 void createUDPSocket() {
     udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
@@ -30,30 +107,30 @@ void createUDPSocket() {
         exit(1);
     }
 
-    memset(&udp_hints,0,sizeof udp_hints);
+    memset(&udp_hints, 0, sizeof udp_hints);
     udp_hints.ai_family = AF_INET;
     udp_hints.ai_socktype = SOCK_DGRAM;
 
-    udp_errcode = getaddrinfo("tejo.tecnico.ulisboa.pt", PORT, &udp_hints, &udp_res); 
-    if(udp_errcode != 0) {
+    udp_errcode = getaddrinfo("tejo.tecnico.ulisboa.pt", PORT, &udp_hints, &udp_res);
+    if (udp_errcode != 0) {
         printf("Erro nesta bomba - deu erro\n");
         exit(1);
     }
 }
 
 void createTCPSocket() {
-    tcp_socket = socket(AF_INET, SOCK_STREAM,0);
+    tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (tcp_socket == -1) {
         printf("Erro neste socket - bruh\n");
         exit(1);
     }
 
-    memset(&tcp_hints,0,sizeof tcp_hints);
+    memset(&tcp_hints, 0, sizeof tcp_hints);
     tcp_hints.ai_family = AF_INET;
     tcp_hints.ai_socktype = SOCK_STREAM;
 
-    tcp_errcode = getaddrinfo("tejo.tecnico.ulisboa.pt", PORT, &tcp_hints, &tcp_res); 
-    if(tcp_errcode != 0) {
+    tcp_errcode = getaddrinfo("tejo.tecnico.ulisboa.pt", PORT, &tcp_hints, &tcp_res);
+    if (tcp_errcode != 0) {
         printf("Erro nesta bomba - deu erro\n");
         exit(1);
     }
@@ -65,99 +142,100 @@ void createTCPSocket() {
     }
 }
 
-void sendUDP(char* message) {
-    char buffer[128];
+void sendUDP(string message) {
+    string buffer;
 
-    n = sendto(udp_socket, message, strlen(message), 0, udp_res->ai_addr, udp_res->ai_addrlen);
-    if (n == -1) {
-        printf("Erro nesta bomba - nao escreveu\n");
-        exit(1);
-    };
-
-    udp_addrlen = sizeof(udp_addr);
-    n = recvfrom(udp_socket, buffer, 128, 0, (struct sockaddr*)&udp_addr, &udp_addrlen);
-    if (n == -1) {
-        printf("Erro nesta bomba - nao escreveu\n");
-        exit(1);
-    };
-
-    write(1,"echo: ",6); 
-    write(1, buffer, n);
-
-    memset(buffer, 0, 128);
-
-}
-
-void sendTCP(char* message) {
-    char buffer[128];
-    n = write(tcp_socket, message, strlen(message));
+    n = sendto(udp_socket, message.c_str(), message.length(), 0, udp_res->ai_addr, udp_res->ai_addrlen);
     if (n == -1) {
         printf("Erro nesta bomba - nao escreveu\n");
         exit(1);
     }
 
-    n = read(tcp_socket, buffer, 128);
+    udp_addrlen = sizeof(udp_addr);
+    n = recvfrom(udp_socket, &buffer[0], 128, 0, (struct sockaddr*)&udp_addr, &udp_addrlen);
+    if (n == -1) {
+        printf("Erro nesta bomba - nao escreveu\n");
+        exit(1);
+    }
+    write(1, &buffer[0], n);
+}
+
+void sendTCP(string message) {
+    string buffer;
+    buffer.clear();
+
+    n = write(tcp_socket, message.c_str(), message.length());
+    if (n == -1) {
+        printf("Erro nesta bomba - nao escreveu\n");
+        exit(1);
+    }
+
+    n = read(tcp_socket, &buffer[0], 128);
     if (n == -1) {
         printf("Erro nesta bomba - nao leu\n");
         exit(1);
     }
-
-    write(1, "echo: ",6);
-    write(1, buffer, n);
-
-    memset(buffer, 0, 128);
-}
-
-void translate (char* command, char* arguments, char * translated_message) {
-    const char* prefix;
-
-   if (strcmp(command, "login") == 0) {
-        prefix = "LIN ";
-    }
-
-    strcpy(translated_message, prefix);
-    strcat(translated_message, arguments);
-    strcat(translated_message, "\n");
+    write(1, &buffer[0], n);
 }
 
 
 int main() {
-    char write_buffer[128];
-    char command[128];
-    char translated_message[128];
+    string write_buffer;
+    string command;
+    string translated_message;
+    string arguments;
 
     createUDPSocket();
 
     while (1) {
+        arguments.clear();
+        command.clear();
+        write_buffer.clear();
+        translated_message.clear();
 
-        fgets(write_buffer, 128, stdin);
-        if (strcmp(write_buffer, "stop\n") == 0) {
-            break;
+        getline(cin, write_buffer);
+
+        vector<string> input = splitString(write_buffer, ' ');
+
+        command = input[0];
+
+        for (size_t i = 1; i < input.size(); i++) {
+            arguments += input[i];
+
+            if (i != (input.size() - 1))
+                arguments += " ";
         }
-        
-        strcpy(command, write_buffer);
-        strtok(command, " ");
-        char * arguments = strtok(NULL, "\n");
 
-        translate(command, arguments, translated_message);
+        translated_message = translateInput(command, arguments);
 
-        if (!strcmp(command, "login")) {
+        if (command == "login") {
+            uid = input[1];
+            password = input[2];
+            
+            sendUDP(translated_message);
+    
+        } else if ((command == "logout") || (command == "unregister")){ 
             sendUDP(translated_message);
 
-        } else if (!strcmp(command, "open")) {
+        } else if ((command == "exit")) {
+            if (logged_in) {
+                cout << "Tem de Logout\n";
+
+            } else {
+                break;
+            }
+
+        } else if (command == "open") {
             createTCPSocket();
             sendTCP(translated_message);
             freeaddrinfo(tcp_res);
             close(tcp_socket);
         }
-
-        memset(command, 0, 128);
-        memset(write_buffer, 0, 128);
-        memset(translated_message, 0, 128);
+    
     }
 
     freeaddrinfo(udp_res);
     close(udp_socket);
-    
+
     return 0;
 }
