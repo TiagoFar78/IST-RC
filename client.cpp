@@ -21,7 +21,6 @@ struct sockaddr_in udp_addr;
 int tcp_errcode, tcp_socket;
 struct addrinfo tcp_hints,*tcp_res;
 
-
 ssize_t n;
 
 void createUDPSocket() {
@@ -68,6 +67,7 @@ void createTCPSocket() {
 
 void sendUDP(char* message) {
     char buffer[128];
+
     n = sendto(udp_socket, message, strlen(message), 0, udp_res->ai_addr, udp_res->ai_addrlen);
     if (n == -1) {
         printf("Erro nesta bomba - nao escreveu\n");
@@ -108,14 +108,27 @@ void sendTCP(char* message) {
     memset(buffer, 0, 128);
 }
 
+void translate (char* command, char* arguments, char * translated_message) {
+    const char* prefix;
+
+   if (strcmp(command, "login") == 0) {
+        prefix = "LIN ";
+    }
+
+    strcpy(translated_message, prefix);
+    strcat(translated_message, arguments);
+    strcat(translated_message, "\n");
+}
+
 
 int main() {
     char write_buffer[128];
+    char command[128];
+    char translated_message[128];
 
     createUDPSocket();
 
     while (1) {
-        char command[128];
 
         fgets(write_buffer, 128, stdin);
         if (strcmp(write_buffer, "stop\n") == 0) {
@@ -124,18 +137,23 @@ int main() {
         
         strcpy(command, write_buffer);
         strtok(command, " ");
+        char * arguments = strtok(NULL, "\n");
+
+        translate(command, arguments, translated_message);
 
         if (!strcmp(command, "login")) {
-            sendUDP(write_buffer);
+            sendUDP(translated_message);
+
         } else if (!strcmp(command, "open")) {
             createTCPSocket();
-            sendTCP(write_buffer);
+            sendTCP(translated_message);
             freeaddrinfo(tcp_res);
             close(tcp_socket);
         }
 
         memset(command, 0, 128);
         memset(write_buffer, 0, 128);
+        memset(translated_message, 0, 128);
     }
 
     freeaddrinfo(udp_res);
