@@ -2,6 +2,7 @@
 #include <fstream>
 #include <cmath>
 #include <dirent.h>
+#include <vector>
 #include <sys/stat.h>
 
 using namespace std;
@@ -85,6 +86,24 @@ int read_from_file(const string& file_name, string& buffer) {
     }
 
     return -1;
+}
+
+vector<string> split_string(string input, char delimiter) {
+    vector<string> result;
+    string current;
+
+    for (size_t i = 0; i < input.length(); ++i) {
+        if (input[i] != delimiter) {
+            current += input[i];
+        }
+
+        if (input[i] == delimiter || i == input.length() - 1) {
+            result.push_back(current);
+            current.clear(); 
+        }
+    }
+
+    return result;
 }
 
 
@@ -227,7 +246,7 @@ int show_record(int aID) {
 }
 
 
-string addZerosBefore(int zeros_amount, int number) {
+string add_zeros_before(int zeros_amount, int number) {
     string s = "";
     string number_string = to_string(number);
     int zeros_to_add = zeros_amount - number_string.length();
@@ -240,13 +259,13 @@ string addZerosBefore(int zeros_amount, int number) {
     return s;
 }
 
-string limitZerosAfterDot(int zeros_amount, float value) {
+string limit_zeros_after_dot(int zeros_amount, float value) {
     float rounded_value = round(value * 100) / 100;
 
     return to_string(rounded_value);
 }
 
-int countFolderEntries(string folder_path) {
+int count_folder_entries(string folder_path) {
     struct dirent** trash; // TODO como mandar isto literalmente para o lixo? Isto serve?
     return scandir(folder_path.c_str(), &trash, 0, alphasort) - 2; // -2 porque conta com o . e ..
 }
@@ -268,8 +287,7 @@ int open_auction(int uID, const string& name, float start_value, int time_active
         return -2;
     }
 
-    int auctions_count = countFolderEntries("ASDIR/AUCTIONS");
-
+    int auctions_count = count_folder_entries("ASDIR/AUCTIONS");
     if (auctions_count >= 999) {
         return -1;
     }
@@ -285,7 +303,7 @@ int open_auction(int uID, const string& name, float start_value, int time_active
     // TODO fazer verificações de não ser possível criar auction tipo o name ser só uma palavra
 
     int aID = auctions_count + 1;
-    string aID_string = addZerosBefore(3, aID);
+    string aID_string = add_zeros_before(3, aID);
     
     string start_file_name = "ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt";
     string asset_file_name = "ASDIR/AUCTIONS/" + aID_string + "/" + fname;
@@ -300,12 +318,12 @@ int open_auction(int uID, const string& name, float start_value, int time_active
 
     struct tm *current_time = gmtime(&full_time);
 
-    string time_string = addZerosBefore(4, current_time->tm_year + 1900) + "-" + 
-            addZerosBefore(2, current_time->tm_mon + 1) + "-" + addZerosBefore(2, current_time->tm_mday) + " " +
-            addZerosBefore(2, current_time->tm_hour) + ":" + addZerosBefore(2, current_time->tm_min) + ":" +
-            addZerosBefore(2, current_time->tm_sec);
+    string time_string = add_zeros_before(4, current_time->tm_year + 1900) + "-" + 
+            add_zeros_before(2, current_time->tm_mon + 1) + "-" + add_zeros_before(2, current_time->tm_mday) + " " +
+            add_zeros_before(2, current_time->tm_hour) + ":" + add_zeros_before(2, current_time->tm_min) + ":" +
+            add_zeros_before(2, current_time->tm_sec);
 
-    string start_file_content = uID_string + " " + name + " " + fname + " " + to_string(start_value) + 
+    string start_file_content = uID_string + " " + name + " " + fname + " " + limit_zeros_after_dot(2, start_value) + 
             " " + to_string(time_active) + " " + time_string + " " + to_string(full_time);
     write_on_file(start_file_name, start_file_content, true);
 
@@ -317,14 +335,87 @@ int open_auction(int uID, const string& name, float start_value, int time_active
 
 /*
  * Return:
+ * time it closed - when already closed
+ * -1 - not closed
+ */
+int auction_expired_time(int aID) {
+    string aID_string = add_zeros_before(3, aID);
+    string start_file_name = "ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt";
+    string start_file_contents;
+    read_from_file(start_file_name, start_file_contents);
+
+    vector<string> contents_arguments = split_string(start_file_contents, ' ');
+
+    int start_time = stoi(contents_arguments[7]);
+    int active_time = stoi(contents_arguments[4]);
+
+    time_t current_time;
+    time(&current_time);
+
+    return current_time >= start_time + active_time ? start_time + active_time : -1;
+}
+
+int close(int aID) {
+    string aID_string = add_zeros_before(3, aID);
+    string end_file_name = "ASDIR/AUCTIONS/" + aID_string + "/END_" + aID_string + ".txt";
+    if (file_exists(end_file_name)) {
+        return -4;
+    }
+
+    create_file(end_file_name);
+
+    int return_code = 0;
+    time_t end_time;
+
+    int auction_expire_time = auction_expired_time(aID);
+    if (auction_expire_time > 0) {
+        return_code = -4;
+        end_time = auction_expire_time;
+    }
+    else {
+        time(&end_time);
+    }
+
+    struct tm* end_date_time = gmtime(&end_time);
+    string end_date_time_string = add_zeros_before(4, end_date_time->tm_year + 1900) + "-" + 
+            add_zeros_before(2, end_date_time->tm_mon + 1) + "-" + add_zeros_before(2, end_date_time->tm_mday) + " " +
+            add_zeros_before(2, end_date_time->tm_hour) + ":" + add_zeros_before(2, end_date_time->tm_min) + ":" +
+            add_zeros_before(2, end_date_time->tm_sec);
+
+    string end_file_contents = end_date_time_string + " " + to_string(end_time);
+    write_on_file(end_file_name, end_file_contents, true);
+
+    return return_code;
+}
+
+/*
+ * Return:
  * 0 - when closed successfully
  * -1 - not logged in
  * -2 - aID does not exist
  * -3 - auction is not owned by user uID
- * -4 - auction aID owned by user uID has already finished
+ * -4 - auction aID has already finished
  */
-int close(int uID, string password, int aID) {
-    return 0;
+int close(int uID, int aID) {
+    string uID_string = to_string(uID);
+    string aID_string = add_zeros_before(3, aID);
+
+    string login_file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + "_login.txt";
+    if (!file_exists(login_file_name)) {
+        return -1;
+    }
+
+    string start_file_name = "ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt";
+    if (!file_exists(start_file_name)) {
+        return -2;
+    }
+
+    string host_file_name = "ASDIR/USERS/" + uID_string + "/HOSTED/" + aID_string + ".txt";
+    if (!file_exists(host_file_name)) {
+        return -3;
+    }
+
+    return close(aID);
 }
 
 

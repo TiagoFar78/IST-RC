@@ -9,7 +9,7 @@ int list_bids_target(int uID);
 int list_auctions();
 int show_record(int aID);
 int open_auction(int uID, const std::string& name, float startValue, int timeActive, const std::string& fileName, int fileSize, const std::string& fileData);
-int close(int uID, const std::string& password, int aID);
+int close(int uID, int aID);
 int show_asset(int aID);
 int bid(int uID, const std::string& password, int aID, float value);
 int file_exists(const std::string& fileName);
