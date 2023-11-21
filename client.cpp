@@ -24,6 +24,7 @@ struct addrinfo tcp_hints,*tcp_res;
 
 ssize_t n;
 string password;
+string temp_pass;
 string uid;
 bool logged_in = false;
 
@@ -66,7 +67,6 @@ string translateInput(string command, string arguments) {
 }
 
 string translateOutput(string message) {
-
     vector<string> output = splitString(message, ' ');
 
     string command = output[0];
@@ -75,12 +75,14 @@ string translateOutput(string message) {
     if (command == "RLI") {
         if (status == "OK\n") {
             logged_in = true;
+            password = temp_pass;
             return "successful login\n";
 
         } else if (status == "NOK\n") {
             return "incorrect login attempt\n";
 
         } else if (status == "REG\n") {
+            password = temp_pass;
             return "new user registered\n";
         }
 
@@ -95,9 +97,20 @@ string translateOutput(string message) {
         } else if (status == "UNR\n") {
             return "unknown user\n";
         }
+    } else if (command == "RUR") {
+        if (status == "OK\n") {
+            logged_in = false;
+            return "successful unregister\n";
+
+        } else if (status == "NOK\n") {
+            return "incorrect unregister attempt\n";
+
+        } else if (status == "UNR\n") {
+            return "unknown user\n";
+        }
     }
 
-    return NULL;
+    return "ERR";
 }
 
 void createUDPSocket() {
@@ -144,6 +157,7 @@ void createTCPSocket() {
 
 void sendUDP(string message) {
     string buffer;
+    string translated_message;
 
     n = sendto(udp_socket, message.c_str(), message.length(), 0, udp_res->ai_addr, udp_res->ai_addrlen);
     if (n == -1) {
@@ -157,12 +171,15 @@ void sendUDP(string message) {
         printf("Erro nesta bomba - nao escreveu\n");
         exit(1);
     }
-    write(1, &buffer[0], n);
+
+    string substring_buffer(buffer.begin(), buffer.begin() + n);
+    translated_message = translateOutput(substring_buffer);
+    cout << translated_message;
 }
 
 void sendTCP(string message) {
     string buffer;
-    buffer.clear();
+    string translated_message;
 
     n = write(tcp_socket, message.c_str(), message.length());
     if (n == -1) {
@@ -175,7 +192,10 @@ void sendTCP(string message) {
         printf("Erro nesta bomba - nao leu\n");
         exit(1);
     }
-    write(1, &buffer[0], n);
+
+    string substring_buffer(buffer.begin(), buffer.begin() + n);
+    translated_message = translateOutput(substring_buffer);
+    cout << translated_message;
 }
 
 
@@ -210,8 +230,7 @@ int main() {
 
         if (command == "login") {
             uid = input[1];
-            password = input[2];
-            
+            temp_pass = input[2];
             sendUDP(translated_message);
     
         } else if ((command == "logout") || (command == "unregister")){ 
