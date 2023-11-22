@@ -229,16 +229,27 @@ int main() {
         translated_message = translateInput(command, arguments);
 
         if (command == "login") {
-            uid = input[1];
-            temp_pass = input[2];
-            sendUDP(translated_message);
+            if (logged_in) {
+                cout << "first execute the logout command\n";
+
+            } else {
+                uid = input[1];
+                temp_pass = input[2];
+                sendUDP(translated_message);
+            }
     
         } else if ((command == "logout") || (command == "unregister")){ 
-            sendUDP(translated_message);
+            if(!logged_in) {
+               cout << "user not logged in\n";
+               
+            } else {
+                sendUDP(translated_message);
+            }
+            
 
         } else if ((command == "exit")) {
             if (logged_in) {
-                cout << "Tem de Logout\n";
+                cout << "first execute the logout command\n";
 
             } else {
                 break;
