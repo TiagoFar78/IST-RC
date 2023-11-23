@@ -104,14 +104,21 @@ string translateInput(string command, string arguments) {
         arguments = uid + " " + password + " " + old_arguments[0] + " " + old_arguments[2] + " " 
                     + old_arguments[3] + " " + old_arguments[1] + " " + fileSize + " " + fileContents;
         
+    } else if (command == "close") {
+        prefix = "CLS ";
+        arguments = uid + " " + password + " " + arguments;
+        
+    } else if ((command == "myauctions") || (command == "ma")) {
+        prefix = "LMA ";
+        arguments = uid;
     }
-
 
     translated_message = prefix + arguments + "\n";
     return translated_message;
 }
 
 string translateOutput(string message) {
+    cout << message;
     vector<string> output = splitString(message, ' ');
 
     string command = output[0];
@@ -164,6 +171,35 @@ string translateOutput(string message) {
         } else if (status == "NLG\n") {
             return "user not logged in\n";
         }
+
+    } else if (command == "RCL") {
+        if (status == "OK\n") {
+            return "successful " + output[2];
+
+        } else if (status == "NLG\n") {
+            return "user not logged in\n";
+
+        } else if (status == "EAU\n") {
+            return "auction does not exist\n";
+
+        } else if (status == "EOW\n") {
+            return "auction is not owned by user " + uid + "\n";
+
+        } else if (status == "END\n") {
+            return "auction has already finished\n";
+        }
+
+    } else if (command == "RMA") {
+        if (status == "OK") {
+            return message;
+        
+        } else if (status == "NOK\n") {
+            return "no ongoing auctions\n";
+
+        } else if (status == "NLG\n") {
+            return "user not logged in\n";
+
+        } 
     }
 
     return message;
@@ -215,6 +251,8 @@ void sendUDP(string message) {
     string buffer;
     string translated_message;
 
+    cout << "cheguei\n ";
+
     n = sendto(udp_socket, message.c_str(), message.length(), 0, udp_res->ai_addr, udp_res->ai_addrlen);
     if (n == -1) {
         printf("Erro nesta bomba - nao escreveu\n");
@@ -222,11 +260,16 @@ void sendUDP(string message) {
     }
 
     udp_addrlen = sizeof(udp_addr);
-    n = recvfrom(udp_socket, &buffer[0], 128, 0, (struct sockaddr*)&udp_addr, &udp_addrlen);
+
+
+    cout << "ola\n";
+    n = recvfrom(udp_socket, &buffer[0], 2048, 0, (struct sockaddr*)&udp_addr, &udp_addrlen);
     if (n == -1) {
         printf("Erro nesta bomba - nao escreveu\n");
         exit(1);
     }
+
+    cout << "mensagem recebida sem traducao:  " << buffer;
 
     string substring_buffer(buffer.begin(), buffer.begin() + n);
     translated_message = translateOutput(substring_buffer);
@@ -283,6 +326,7 @@ int main() {
         }
 
         translated_message = translateInput(command, arguments);
+        cout << "mensagem a mandar: " << translated_message;
 
         if (command == "login") {
             if (logged_in) {
@@ -294,7 +338,7 @@ int main() {
                 sendUDP(translated_message);
             }
     
-        } else if ((command == "logout") || (command == "unregister")){ 
+        } else if ((command == "logout") || (command == "unregister") || (command == "myauctions") || (command == "ma")){ 
             if(!logged_in) {
                cout << "user not logged in\n";
                
@@ -311,7 +355,7 @@ int main() {
                 break;
             }
 
-        } else if (command == "open") {
+        } else if (command == "open" || command == "close") {
             if(!logged_in) {
                cout << "user not logged in\n";
                
