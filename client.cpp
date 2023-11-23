@@ -10,6 +10,9 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <sys/stat.h>
+#include <fstream>
+
 #define PORT "58011"
 
 using namespace std;
@@ -27,6 +30,33 @@ string password;
 string temp_pass;
 string uid;
 bool logged_in = false;
+
+int read_from_file(const string& file_name, string& buffer) {
+    ifstream file(file_name);
+    if (file.is_open()) {
+        file.seekg(0, ios::end);
+        streamsize size = file.tellg();
+        file.seekg(0, ios::beg);
+
+        buffer.resize(size);
+        file.read(&buffer[0], size);
+
+        return 0;
+    }
+
+    return -1;
+}
+
+
+size_t getFileSize(const string& file_name) {
+    struct stat file_stat;
+
+    if (stat(file_name.c_str(), &file_stat) == 0) {
+        return static_cast<size_t>(file_stat.st_size);
+    } else {
+        return 0; 
+    }
+}
 
 vector<string> splitString(string input, char delimiter) {
     vector<string> result;
@@ -60,7 +90,22 @@ string translateInput(string command, string arguments) {
     } else if (command == "unregister") {
         prefix = "UNR ";
         arguments += uid + " " + password;
+
+    } else if (command == "open") {
+        prefix = "OPA ";
+        vector<string> old_arguments = splitString(arguments, ' ');
+
+        string fileContents;
+        
+        //TODO verificar se correu bem a ambas as funcoes
+        read_from_file(old_arguments[1], fileContents);
+        string fileSize = to_string(getFileSize(old_arguments[1]));
+
+        arguments = uid + " " + password + " " + old_arguments[0] + " " + old_arguments[2] + " " 
+                    + old_arguments[3] + " " + old_arguments[1] + " " + fileSize + " " + fileContents;
+        
     }
+
 
     translated_message = prefix + arguments + "\n";
     return translated_message;
@@ -108,9 +153,20 @@ string translateOutput(string message) {
         } else if (status == "UNR\n") {
             return "unknown user\n";
         }
+
+    } else if (command == "ROA") {
+        if (status == "OK") {
+            return "successful " + output[2];
+
+        } else if (status == "NOK\n") {
+            return "auction could not be started\n";
+
+        } else if (status == "NLG\n") {
+            return "user not logged in\n";
+        }
     }
 
-    return "ERR";
+    return message;
 }
 
 void createUDPSocket() {
@@ -256,10 +312,15 @@ int main() {
             }
 
         } else if (command == "open") {
-            createTCPSocket();
-            sendTCP(translated_message);
-            freeaddrinfo(tcp_res);
-            close(tcp_socket);
+            if(!logged_in) {
+               cout << "user not logged in\n";
+               
+            } else {
+                createTCPSocket();
+                sendTCP(translated_message);
+                freeaddrinfo(tcp_res);
+                close(tcp_socket);
+            }
         }
     
     }
