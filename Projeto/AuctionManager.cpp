@@ -494,6 +494,24 @@ int close(int uID, int aID) {
 
 // > ---------------------- { Bids Functions } ---------------------- <
 
+int get_higher_bid(int aID) {
+    struct dirent** filelist;
+
+    string aID_string = add_zeros_before(3, aID);
+
+    string dirname = "ASDIR/AUCTIONS/" + aID_string + "/BIDS/";
+    int n_entries = scandir(dirname.c_str(), &filelist, 0, alphasort);
+    if (n_entries - 2 <= 0) {
+        return 0;
+    }
+
+    n_entries--;
+    string file_name = filelist[n_entries]->d_name;
+    file_name = file_name.substr(0, file_name.length() - 4);
+
+    return stoi(file_name);
+}
+
 /*
  * Return:
  * 0 - accepted
@@ -501,7 +519,7 @@ int close(int uID, int aID) {
  * -2 - refused because a larger bid
  * -3 - user tries to make a bid in an auction hosted by himself
  */
-int bid(int uID, string password, int aID, int value) {
+int bid(int uID, int aID, int value) {
     string aID_string = add_zeros_before(3, aID);
 
     string start_file_name = "ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt";
@@ -514,19 +532,23 @@ int bid(int uID, string password, int aID, int value) {
         return -1;
     }
 
-    int higher_bid = 0; // TODO encontrar a bid mais elevada de alguma maneira desconhecida
+    int higher_bid = get_higher_bid(aID);
     if (value <= higher_bid) {
         return -2;
     }
 
     string uID_string = to_string(uID);
 
-    string host_file_name = "ASDIR/USERS/" + uID_string + "/HOSTED/" + aID_string;
+    string host_file_name = "ASDIR/USERS/" + uID_string + "/HOSTED/" + aID_string + ".txt";
     if (file_exists(host_file_name)) {
         return -3;
     }
 
-    string bid_file_name = add_zeros_before(6, value) + ".txt";
+    string bidder_file_name = "ASDIR/USERS/" + uID_string + "/BIDDED/" + aID_string + ".txt";
+    create_file(bidder_file_name);
+
+    string bid_file_name = "ASDIR/AUCTIONS/" + aID_string + "/BIDS/" + add_zeros_before(6, value) + ".txt";
+    create_file(bid_file_name);
     
     time_t full_time;
     time(&full_time);
@@ -539,6 +561,8 @@ int bid(int uID, string password, int aID, int value) {
             add_zeros_before(2, current_time->tm_sec);
     
     string contents_file_name = uID_string + " " + to_string(value) + " " + time_string + " " + to_string(full_time);
+
+    write_on_file(bid_file_name, contents_file_name, true);
 
     return 0;
 }
