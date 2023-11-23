@@ -7,6 +7,16 @@
 
 using namespace std;
 
+// #-------------------------------------------------------------------#
+// |                        Function Definition                        |
+// #-------------------------------------------------------------------#
+
+int close(int aID);
+string add_zeros_before(int zeros_amount, int number);
+int auction_expired_time(int aID);
+
+// Actual Manager
+
 int getLastIndexOfSlash(const string& s) {
 	for(int i = s.length() - 1; i >= 0; i--) {
 		if (s[i] == '/') {
@@ -229,10 +239,31 @@ int list_bids_target(int uID) {
 
 /*
  * Return:
- * {0, list} successfully
+ * list of auctions states
  */
-int list_auctions() {
-    return 0;
+vector<int> list_auctions() {
+    vector<int> auctions_states;
+
+    int i = 1;
+    string aID_string = add_zeros_before(3, i);
+    while (file_exists("ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt")) {
+        int auction_state = 1;
+
+        if (auction_expired_time(i) != -1) {
+            close(i);
+            auction_state = 0;
+        } 
+        else if (file_exists("ASDIR/AUCTIONS/" + aID_string + "/END_" + aID_string + ".txt")) {
+            auction_state = 0;
+        }
+
+        auctions_states.push_back(auction_state);
+
+        i++;
+        aID_string = add_zeros_before(3, i);
+    }
+
+    return auctions_states;
 }
 
 
@@ -259,12 +290,6 @@ string add_zeros_before(int zeros_amount, int number) {
     return s;
 }
 
-string limit_zeros_after_dot(int zeros_amount, float value) {
-    float rounded_value = round(value * 100) / 100;
-
-    return to_string(rounded_value);
-}
-
 int count_folder_entries(string folder_path) {
     struct dirent** trash; // TODO como mandar isto literalmente para o lixo? Isto serve?
     return scandir(folder_path.c_str(), &trash, 0, alphasort) - 2; // -2 porque conta com o . e ..
@@ -276,12 +301,10 @@ int count_folder_entries(string folder_path) {
  * -1 - could not create auction
  * -2 - not logged in
  */
-int open_auction(int uID, const string& name, float start_value, int time_active, const string& fname, int file_size, const string& fdata) {
+int open_auction(int uID, const string& name, int start_value, int time_active, const string& fname, int file_size, const string& fdata) {
     string uID_string = to_string(uID);
     
-    string login_file_name = "ASDIR/USERS/" + uID_string;
-    login_file_name.append("/" + uID_string);
-    login_file_name.append("_login.txt");
+    string login_file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + "_login.txt";
 
     if (!file_exists(login_file_name)) {
         return -2;
@@ -323,7 +346,7 @@ int open_auction(int uID, const string& name, float start_value, int time_active
             add_zeros_before(2, current_time->tm_hour) + ":" + add_zeros_before(2, current_time->tm_min) + ":" +
             add_zeros_before(2, current_time->tm_sec);
 
-    string start_file_content = uID_string + " " + name + " " + fname + " " + limit_zeros_after_dot(2, start_value) + 
+    string start_file_content = uID_string + " " + name + " " + fname + " " + to_string(start_value) + 
             " " + to_string(time_active) + " " + time_string + " " + to_string(full_time);
     write_on_file(start_file_name, start_file_content, true);
 
