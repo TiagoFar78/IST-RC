@@ -16,7 +16,11 @@ int close(int aID);
 string add_zeros_before(int zeros_amount, int number);
 int auction_expired_time(int aID);
 
-// Actual Manager
+// #-------------------------------------------------------------------#
+// |                      Function Implementation                      |
+// #-------------------------------------------------------------------#
+
+// > --------------------- { Useful Functions } --------------------- <
 
 int getLastIndexOfSlash(const string& s) {
 	for(int i = s.length() - 1; i >= 0; i--) {
@@ -27,6 +31,45 @@ int getLastIndexOfSlash(const string& s) {
 	
 	return -1;	
 }
+
+vector<string> split_string(string input, char delimiter) {
+    vector<string> result;
+    string current;
+
+    for (size_t i = 0; i < input.length(); ++i) {
+        if (input[i] != delimiter) {
+            current += input[i];
+        }
+
+        if (input[i] == delimiter || i == input.length() - 1) {
+            result.push_back(current);
+            current.clear(); 
+        }
+    }
+
+    return result;
+}
+
+string add_zeros_before(int zeros_amount, int number) {
+    string s = "";
+    string number_string = to_string(number);
+    int zeros_to_add = zeros_amount - number_string.length();
+    for (int i = 0; i < zeros_to_add; i++) {
+        s += to_string(0);
+    }
+
+    s += number_string;
+
+    return s;
+}
+
+int count_folder_entries(string folder_path) {
+    struct dirent** trash; // TODO como mandar isto literalmente para o lixo? Isto serve?
+    return scandir(folder_path.c_str(), &trash, 0, alphasort) - 2; // -2 porque conta com o . e ..
+}
+
+
+// > ---------------------- { File Functions } ---------------------- <
 
 int file_exists(const string& file_name) {
     ifstream file(file_name);
@@ -99,24 +142,8 @@ int read_from_file(const string& file_name, string& buffer) {
     return -1;
 }
 
-vector<string> split_string(string input, char delimiter) {
-    vector<string> result;
-    string current;
 
-    for (size_t i = 0; i < input.length(); ++i) {
-        if (input[i] != delimiter) {
-            current += input[i];
-        }
-
-        if (input[i] == delimiter || i == input.length() - 1) {
-            result.push_back(current);
-            current.clear(); 
-        }
-    }
-
-    return result;
-}
-
+// > ----------------------- { User Session } ----------------------- <
 
 /*
  * Return:
@@ -216,14 +243,39 @@ int unregister(int uID) {
 }
 
 
+// > ----------------------- { Lists & Show } ----------------------- <
+
 /*
  * Return:
- * {0, list} successfully
- * {-1, null} - no ongoing auctions
- * {-2, null} - not logged in
+ * list of auctions owned by uID
  */
-int list_auctions_target(int uID) {
-    return 0;
+vector<AuctionState> list_auctions_target(int uID) {
+    string uID_string = to_string(uID);
+
+    vector<AuctionState> auctions_states;
+
+    int i = 1;
+    string aID_string = add_zeros_before(3, i);
+    while (file_exists("ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt")) {
+        if (file_exists("ASDIR/USERS/" + uID_string + "/HOSTED/" + aID_string + ".txt")) {
+            int auction_state = 1;
+
+            if (auction_expired_time(i) != -1) {
+                close(i);
+                auction_state = 0;
+            } 
+            else if (file_exists("ASDIR/AUCTIONS/" + aID_string + "/END_" + aID_string + ".txt")) {
+                auction_state = 0;
+            }
+
+            auctions_states.push_back({aID_string, auction_state});
+        }
+
+        i++;
+        aID_string = add_zeros_before(3, i);
+    }
+
+    return auctions_states;
 }
 
 
@@ -278,23 +330,17 @@ int show_record(int aID) {
 }
 
 
-string add_zeros_before(int zeros_amount, int number) {
-    string s = "";
-    string number_string = to_string(number);
-    int zeros_to_add = zeros_amount - number_string.length();
-    for (int i = 0; i < zeros_to_add; i++) {
-        s += to_string(0);
-    }
-
-    s += number_string;
-
-    return s;
+/*
+ * Return:
+ * {0, cena} - successfully
+ * {-1, null} - no file (or other problem)
+ */
+int show_asset(int aID) {
+    return 0;
 }
 
-int count_folder_entries(string folder_path) {
-    struct dirent** trash; // TODO como mandar isto literalmente para o lixo? Isto serve?
-    return scandir(folder_path.c_str(), &trash, 0, alphasort) - 2; // -2 porque conta com o . e ..
-}
+
+// > -------------------- { Auctions Functions } -------------------- <
 
 /*
  * Return:
@@ -321,6 +367,10 @@ int open_auction(int uID, const string& name, int start_value, int time_active, 
     }
 
     if (start_value < 0) {
+        return -1;
+    }
+
+    if (file_size > 99999999) { // TODO fazer isto como deve de ser 
         return -1;
     }
 
@@ -355,7 +405,6 @@ int open_auction(int uID, const string& name, int start_value, int time_active, 
 
     return aID;
 }
-
 
 /*
  * Return:
@@ -443,24 +492,53 @@ int close(int uID, int aID) {
 }
 
 
-/*
- * Return:
- * {0, cena} - successfully
- * {-1, null} - no file (or other problem)
- */
-int show_asset(int aID) {
-    return 0;
-}
-
+// > ---------------------- { Bids Functions } ---------------------- <
 
 /*
  * Return:
  * 0 - accepted
  * -1 - auction aID is not active
- * -2 - user was not logged in
- * -3 - refused because a larger bid
- * -4 - user tries to make a bid in an auction hosted by himself
+ * -2 - refused because a larger bid
+ * -3 - user tries to make a bid in an auction hosted by himself
  */
-int bid(int uID, string password, int aID, float value) {
+int bid(int uID, string password, int aID, int value) {
+    string aID_string = add_zeros_before(3, aID);
+
+    string start_file_name = "ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt";
+    if (!file_exists(start_file_name)) {
+        return -1;
+    }
+
+    string end_file_name = "ASDIR/AUCTIONS/" + aID_string + "/END_" + aID_string + ".txt";
+    if (file_exists(end_file_name)) {
+        return -1;
+    }
+
+    int higher_bid = 0; // TODO encontrar a bid mais elevada de alguma maneira desconhecida
+    if (value <= higher_bid) {
+        return -2;
+    }
+
+    string uID_string = to_string(uID);
+
+    string host_file_name = "ASDIR/USERS/" + uID_string + "/HOSTED/" + aID_string;
+    if (file_exists(host_file_name)) {
+        return -3;
+    }
+
+    string bid_file_name = add_zeros_before(6, value) + ".txt";
+    
+    time_t full_time;
+    time(&full_time);
+
+    struct tm *current_time = gmtime(&full_time);
+
+    string time_string = add_zeros_before(4, current_time->tm_year + 1900) + "-" + 
+            add_zeros_before(2, current_time->tm_mon + 1) + "-" + add_zeros_before(2, current_time->tm_mday) + " " +
+            add_zeros_before(2, current_time->tm_hour) + ":" + add_zeros_before(2, current_time->tm_min) + ":" +
+            add_zeros_before(2, current_time->tm_sec);
+    
+    string contents_file_name = uID_string + " " + to_string(value) + " " + time_string + " " + to_string(full_time);
+
     return 0;
 }
