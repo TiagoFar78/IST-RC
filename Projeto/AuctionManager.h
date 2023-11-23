@@ -3,12 +3,17 @@
 
 #include <vector>
 
+struct AuctionState {
+    std::string aID_string;
+    int state;
+};
+
 int login(int uID, const std::string& password);
 int logout(int uID);
 int unregister(int uID);
 int list_auctions_target(int uID);
 int list_bids_target(int uID);
-std::vector<int> list_auctions();
+std::vector<AuctionState> list_auctions();
 int show_record(int aID);
 int open_auction(int uID, const std::string& name, int startValue, int timeActive, const std::string& fileName, int fileSize, const std::string& fileData);
 int close(int uID, int aID);

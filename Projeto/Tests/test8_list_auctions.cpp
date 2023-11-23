@@ -20,7 +20,7 @@ int main() {
     string asset_name = "banger.txt";
 
     // Basic tests
-    vector<int> list = list_auctions();
+    vector<AuctionState> list = list_auctions();
     assert(list.size() == 0);
 
     assert(login(uID, password) == 1);
@@ -28,7 +28,7 @@ int main() {
     assert(open_auction(uID, "boas", 100, 30, asset_name, sizeof(fdata), fdata) == 1);
 
     list = list_auctions();
-    assert(list.size() == 1 && list[0] == 1);
+    assert(list.size() == 1 && list[0].state == 1);
 
     assert(close(uID, 1) == 0);
 
@@ -37,7 +37,7 @@ int main() {
     assert(open_auction(uID + 1, "segunda", 100, 30, asset_name, sizeof(fdata), fdata) == 2);
 
     list = list_auctions();
-    assert(list.size() == 2 && list[0] == 0 && list[1] == 1);
+    assert(list.size() == 2 && list[0].state == 0 && list[1].state == 1);
 
     // Limpar o lixo produzido pelo teste
     for (int i = 1; i <= total_open_auctions; i++) {

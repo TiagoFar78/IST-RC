@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <vector>
 #include <sys/stat.h>
+#include "AuctionManager.h"
 
 using namespace std;
 
@@ -241,8 +242,8 @@ int list_bids_target(int uID) {
  * Return:
  * list of auctions states
  */
-vector<int> list_auctions() {
-    vector<int> auctions_states;
+vector<AuctionState> list_auctions() {
+    vector<AuctionState> auctions_states;
 
     int i = 1;
     string aID_string = add_zeros_before(3, i);
@@ -257,7 +258,7 @@ vector<int> list_auctions() {
             auction_state = 0;
         }
 
-        auctions_states.push_back(auction_state);
+        auctions_states.push_back({aID_string, auction_state});
 
         i++;
         aID_string = add_zeros_before(3, i);
