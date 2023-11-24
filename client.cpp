@@ -118,7 +118,6 @@ string translateInput(string command, string arguments) {
 }
 
 string translateOutput(string message) {
-    cout << message;
     vector<string> output = splitString(message, ' ');
 
     string command = output[0];
@@ -191,6 +190,13 @@ string translateOutput(string message) {
 
     } else if (command == "RMA") {
         if (status == "OK") {
+            string message;
+            for(int i = 2; i < output.size() - 1; i = i + 2) {
+                message += output[i] + " " + output[i + 1];
+                if(i != output.size() - 2) {
+                    message += "\n";
+                }
+            }
             return message;
         
         } else if (status == "NOK\n") {
@@ -248,10 +254,8 @@ void createTCPSocket() {
 }
 
 void sendUDP(string message) {
-    string buffer;
+    char buffer[2048];
     string translated_message;
-
-    cout << "cheguei\n ";
 
     n = sendto(udp_socket, message.c_str(), message.length(), 0, udp_res->ai_addr, udp_res->ai_addrlen);
     if (n == -1) {
@@ -261,23 +265,20 @@ void sendUDP(string message) {
 
     udp_addrlen = sizeof(udp_addr);
 
-
-    cout << "ola\n";
-    n = recvfrom(udp_socket, &buffer[0], 2048, 0, (struct sockaddr*)&udp_addr, &udp_addrlen);
+    //como estou a endereçar mudar char buffer
+    n = recvfrom(udp_socket, buffer , 2048, 0, (struct sockaddr*)&udp_addr, &udp_addrlen);
     if (n == -1) {
         printf("Erro nesta bomba - nao escreveu\n");
         exit(1);
     }
 
-    cout << "mensagem recebida sem traducao:  " << buffer;
-
-    string substring_buffer(buffer.begin(), buffer.begin() + n);
+    string substring_buffer(buffer, buffer + n);
     translated_message = translateOutput(substring_buffer);
     cout << translated_message;
 }
 
 void sendTCP(string message) {
-    string buffer;
+    char buffer[2048];
     string translated_message;
 
     n = write(tcp_socket, message.c_str(), message.length());
@@ -286,13 +287,13 @@ void sendTCP(string message) {
         exit(1);
     }
 
-    n = read(tcp_socket, &buffer[0], 128);
+    n = read(tcp_socket, buffer, 2048);
     if (n == -1) {
         printf("Erro nesta bomba - nao leu\n");
         exit(1);
     }
 
-    string substring_buffer(buffer.begin(), buffer.begin() + n);
+    string substring_buffer(buffer, buffer + n);
     translated_message = translateOutput(substring_buffer);
     cout << translated_message;
 }
@@ -326,7 +327,6 @@ int main() {
         }
 
         translated_message = translateInput(command, arguments);
-        cout << "mensagem a mandar: " << translated_message;
 
         if (command == "login") {
             if (logged_in) {
