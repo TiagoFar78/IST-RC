@@ -281,12 +281,35 @@ vector<AuctionState> list_auctions_target(int uID) {
 
 /*
  * Return:
- * {0, list} successfully
- * {-1, null} - no ongoing bids
- * {-2, null} - not logged in
+ * list of auctions where uID bidded
  */
-int list_bids_target(int uID) {
-    return 0;
+vector<AuctionState> list_bids_target(int uID) {
+    string uID_string = to_string(uID);
+
+    vector<AuctionState> auctions_states;
+
+    int i = 1;
+    string aID_string = add_zeros_before(3, i);
+    while (file_exists("ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt")) {
+        if (file_exists("ASDIR/USERS/" + uID_string + "/BIDDED/" + aID_string + ".txt")) {
+            int auction_state = 1;
+
+            if (auction_expired_time(i) != -1) {
+                close(i);
+                auction_state = 0;
+            } 
+            else if (file_exists("ASDIR/AUCTIONS/" + aID_string + "/END_" + aID_string + ".txt")) {
+                auction_state = 0;
+            }
+
+            auctions_states.push_back({aID_string, auction_state});
+        }
+
+        i++;
+        aID_string = add_zeros_before(3, i);
+    }
+
+    return auctions_states;
 }
 
 

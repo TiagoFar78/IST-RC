@@ -12,7 +12,7 @@ int login(int uID, const std::string& password);
 int logout(int uID);
 int unregister(int uID);
 std::vector<AuctionState> list_auctions_target(int uID);
-int list_bids_target(int uID);
+std::vector<AuctionState> list_bids_target(int uID);
 std::vector<AuctionState> list_auctions();
 int show_record(int aID);
 int open_auction(int uID, const std::string& name, int startValue, int timeActive, const std::string& fileName, int fileSize, const std::string& fileData);
