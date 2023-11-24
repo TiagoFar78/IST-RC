@@ -111,9 +111,16 @@ string translateInput(string command, string arguments) {
     } else if ((command == "myauctions") || (command == "ma")) {
         prefix = "LMA ";
         arguments = uid;
+
+    } else if ((command == "list") || (command == "l")) {
+        prefix = "LST";
+
+    } else if ((command == "bid") || (command == "b")) {
+        prefix = "BID ";
+        arguments = uid + " " + password + " " + arguments;
     }
 
-    translated_message = prefix + arguments + "\n";
+    translated_message = prefix + arguments + "\n"; 
     return translated_message;
 }
 
@@ -204,8 +211,50 @@ string translateOutput(string message) {
 
         } else if (status == "NLG\n") {
             return "user not logged in\n";
-
         } 
+
+    } else if (command == "RLS") {
+        if (status == "OK") {
+            string message;
+            for(int i = 2; i < output.size() - 1; i = i + 2) {
+                message += output[i] + " " + output[i + 1];
+                if(i != output.size() - 2) {
+                    message += "\n";
+                }
+            }
+            return message;
+        
+        } else if (status == "NOK\n") {
+            return "no auction was yet started\n";
+        }
+        
+    } else if (command == "RBD") {
+        if (status == "OK") {
+            string message;
+            for(int i = 2; i < output.size() - 1; i = i + 2) {
+                message += output[i] + " " + output[i + 1];
+                if(i != output.size() - 2) {
+                    message += "\n";
+                }
+            }
+            return message;
+        
+        } else if (status == "NOK\n") {
+            return "auction is not active\n";
+
+        } else if (status == "NLG\n") {
+            return "user not logged in\n";
+
+        } else if (status == "ACC\n") {
+            return "bid was accepted\n";
+
+        } else if (status == "REF\n") {
+            return "bid was refused because a larger bid has already been placed previously\n";
+            
+        } else if (status == "ILG\n") {
+            return "tried to make a bid in an auction hosted by yourself\n";
+        }
+
     }
 
     return message;
@@ -316,7 +365,6 @@ int main() {
         getline(cin, write_buffer);
 
         vector<string> input = splitString(write_buffer, ' ');
-
         command = input[0];
 
         for (size_t i = 1; i < input.size(); i++) {
@@ -338,14 +386,16 @@ int main() {
                 sendUDP(translated_message);
             }
     
-        } else if ((command == "logout") || (command == "unregister") || (command == "myauctions") || (command == "ma")){ 
+        } else if ((command == "logout") || (command == "unregister") || (command == "myauctions") || (command == "ma")) { 
             if(!logged_in) {
                cout << "user not logged in\n";
                
             } else {
                 sendUDP(translated_message);
             }
-            
+        
+        } else if ((command == "list") || (command == "l")) {
+            sendUDP(translated_message);
 
         } else if ((command == "exit")) {
             if (logged_in) {
@@ -355,7 +405,7 @@ int main() {
                 break;
             }
 
-        } else if (command == "open" || command == "close") {
+        } else if (command == "open" || command == "close" || command == "bid" || command == "b") {
             if(!logged_in) {
                cout << "user not logged in\n";
                
