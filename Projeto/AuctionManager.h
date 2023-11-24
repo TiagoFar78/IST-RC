@@ -18,7 +18,7 @@ int show_record(int aID);
 int open_auction(int uID, const std::string& name, int startValue, int timeActive, const std::string& fileName, int fileSize, const std::string& fileData);
 int close(int uID, int aID);
 int show_asset(int aID);
-int bid(int uID, const std::string& password, int aID, int value);
+int bid(int uID, int aID, int value);
 int file_exists(const std::string& fileName);
 int create_file(const std::string& fileName);
 int delete_file(const std::string& fileName);
