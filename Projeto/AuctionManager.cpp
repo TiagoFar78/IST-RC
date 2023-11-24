@@ -1,12 +1,13 @@
-#include <iostream>
+#include <iostream> // TODO retirar no fim serve para o cout
 #include <fstream>
-#include <cmath>
 #include <dirent.h>
 #include <vector>
 #include <sys/stat.h>
+#include <filesystem>
 #include "AuctionManager.h"
 
 using namespace std;
+namespace fs = std::filesystem;
 
 // #-------------------------------------------------------------------#
 // |                        Function Definition                        |
@@ -345,11 +346,56 @@ vector<AuctionState> list_auctions() {
 
 /*
  * Return:
- * {0, list} successfully
- * {-1, null} - does not exist auction
+ * Auction info
+ * NULL if does not exist auction
  */
-int show_record(int aID) {
-    return 0;
+vector<string> get_auction_start_details(int aID) {
+    string aID_string = add_zeros_before(3, aID);
+    string start_file_name = "ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt";
+    if (!file_exists(start_file_name)) {
+        vector<string> empty_vector;
+        return empty_vector;
+    }
+
+    string start_file_contents;
+    read_from_file(start_file_name, start_file_contents);
+    return split_string(start_file_contents, ' ');
+
+    //return contents[0] + " " + contents[1] + " " + contents[2] + " " + contents[3] + " " + 
+            //contents[5] + " " + contents[6] + " " + contents[4];
+}
+
+vector<vector<string>> get_auction_bids_details(int aID) {    
+    vector<vector<string>> bids_details;
+    
+    string aID_string = add_zeros_before(3, aID);
+    string start_file_name = "ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt";
+    if (!file_exists(start_file_name)) {
+        return bids_details;
+    }
+
+    for (const auto& entry : fs::directory_iterator("ASDIR/AUCTIONS/" + aID_string + "/BIDS")) {
+        string bid_file_name = entry.path().filename().string();
+
+        string bid_file_contents;
+        read_from_file(bid_file_name, bid_file_contents);
+        bids_details.push_back(split_string(bid_file_contents, ' '));
+    }
+
+    return bids_details;
+}
+
+vector<string> get_auction_end_details(int aID) {
+    string aID_string = add_zeros_before(3, aID);
+    string end_file_name = "ASDIR/AUCTIONS/" + aID_string + "/END_" + aID_string + ".txt";
+    if (!file_exists(end_file_name)) {
+        vector<string> empty_vector;
+        return empty_vector;
+    }
+
+    string end_file_contents;
+    read_from_file(end_file_name, end_file_contents);
+    return split_string(end_file_contents, ' ');
 }
 
 
