@@ -122,6 +122,9 @@ string translateInput(string command, string arguments) {
     } else if ((command == "bid") || (command == "b")) {
         prefix = "BID ";
         arguments = uid + " " + password + " " + arguments;
+
+    }  else if ((command == "show_record") || (command == "sr")) {
+        prefix = "SRC ";
     }
 
     translated_message = prefix + arguments + "\n"; 
@@ -277,6 +280,15 @@ string translateOutput(string message) {
             return "tried to make a bid in an auction hosted by yourself\n";
         }
 
+    } else if (command == "RRC") {
+        if (status == "OK") {
+            //TODO pq é q n vem com \n
+            return message;
+        
+        } else if (status == "NOK\n") {
+            return "auction does not exist\n";
+        }
+        
     }
 
     return message;
@@ -417,7 +429,7 @@ int main() {
                 sendUDP(translated_message);
             }
         
-        } else if ((command == "list") || (command == "l")) {
+        } else if ((command == "list") || (command == "l") || (command == "show_record") || (command == "sr")) {
             sendUDP(translated_message);
 
         } else if ((command == "exit")) {
