@@ -112,6 +112,10 @@ string translateInput(string command, string arguments) {
         prefix = "LMA ";
         arguments = uid;
 
+    } else if ((command == "mybids") || (command == "mb")) {
+        prefix = "LMB ";
+        arguments = uid;
+
     } else if ((command == "list") || (command == "l")) {
         prefix = "LST";
 
@@ -212,6 +216,24 @@ string translateOutput(string message) {
         } else if (status == "NLG\n") {
             return "user not logged in\n";
         } 
+    
+    } else if (command == "RMB") {
+        if (status == "OK") {
+            string message;
+            for(int i = 2; i < output.size() - 1; i = i + 2) {
+                message += output[i] + " " + output[i + 1];
+                if(i != output.size() - 2) {
+                    message += "\n";
+                }
+            }
+            return message;
+        
+        } else if (status == "NOK\n") {
+            return "no ongoing bids\n";
+
+        } else if (status == "NLG\n") {
+            return "user not logged in\n";
+        }
 
     } else if (command == "RLS") {
         if (status == "OK") {
@@ -386,7 +408,8 @@ int main() {
                 sendUDP(translated_message);
             }
     
-        } else if ((command == "logout") || (command == "unregister") || (command == "myauctions") || (command == "ma")) { 
+        } else if ((command == "logout") || (command == "unregister") || (command == "myauctions") || (command == "ma") 
+                    || (command == "mybids") || (command == "mb")) { 
             if(!logged_in) {
                cout << "user not logged in\n";
                
