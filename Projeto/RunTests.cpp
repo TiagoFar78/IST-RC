@@ -7,42 +7,77 @@
 #include <filesystem>
 
 namespace fs = std::filesystem;
+using namespace std;
 
-bool compareFunction (std::string a, std::string b) {return a<b;} 
+bool compareFunction (string a, string b) {return a<b;} 
 
 int main() {
-    std::vector<std::string> test_files;
+    vector<string> test_files;
 
     // Iterate through files in the "Testes" folder
     for (const auto& entry : fs::directory_iterator("Tests")) {
-        std::string entry_name = entry.path().filename().string();
+        string entry_name = entry.path().filename().string();
         if (entry.is_regular_file() && entry_name.substr(0, 4) == "test" && 
                 entry_name.substr(entry_name.length() - 4, entry_name.length()) == ".cpp") {
             test_files.push_back(entry.path().string());
         }
     }
 
-    std::sort(test_files.begin(), test_files.end());
+    sort(test_files.begin(), test_files.end());
 
     // Run each test file
     for (const auto& test_file : test_files) {
-        std::cout << "Running test file: " << test_file << " -> ";
+        cout << "Running test file: " << test_file << " -> ";
 
-        std::string test_file_without_extension = test_file.substr(0, test_file.length() - 4);
+        string test_file_without_extension = test_file.substr(0, test_file.length() - 4);
 
-        std::string compile_command = "g++ -std=c++17 AuctionManager.cpp " + test_file + " -o " + test_file_without_extension;
-        std::system(compile_command.c_str());
+        string compile_command = "g++ -std=c++17 AuctionManager.cpp " + test_file + " -o " + test_file_without_extension;
+        system(compile_command.c_str());
 
-        std::string run_command = test_file_without_extension;
+        string run_command = test_file_without_extension;
         int result = system(run_command.c_str());
 
         if (result == 0) {
-            std::cout << "\033[32mTest passed successfully.\033[0m" << std::endl;
+            cout << "\033[32mTest passed successfully.\033[0m" << endl;
         } else {
-            std::cout << "\033[31mTest failed.\033[0m" << std::endl;
+            cout << "\033[31mTest failed.\033[0m" << endl;
         }
 
-        std::remove(test_file_without_extension.c_str());
+        remove(test_file_without_extension.c_str());
+    }
+
+    test_files.clear();
+
+    // Iterate through files in the "Testes/ServerTests" folder
+    for (const auto& entry : fs::directory_iterator("Tests/ServerTests")) {
+        string entry_name = entry.path().filename().string();
+        if (entry.is_regular_file() && entry_name.substr(0, 4) == "test" && 
+                entry_name.substr(entry_name.length() - 4, entry_name.length()) == ".cpp") {
+            test_files.push_back(entry.path().string());
+        }
+    }
+
+    sort(test_files.begin(), test_files.end());
+
+    // Run each test file
+    for (const auto& test_file : test_files) {
+        cout << "Running test file: " << test_file << " -> ";
+
+        string test_file_without_extension = test_file.substr(0, test_file.length() - 4);
+
+        string compile_command = "g++ -std=c++17 AuctionManager.cpp Server.cpp " + test_file + " -o " + test_file_without_extension;
+        system(compile_command.c_str());
+
+        string run_command = test_file_without_extension;
+        int result = system(run_command.c_str());
+
+        if (result == 0) {
+            cout << "\033[32mTest passed successfully.\033[0m" << endl;
+        } else {
+            cout << "\033[31mTest failed.\033[0m" << endl;
+        }
+
+        remove(test_file_without_extension.c_str());
     }
 
     return 0;

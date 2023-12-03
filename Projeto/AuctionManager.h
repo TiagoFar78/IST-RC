@@ -2,6 +2,7 @@
 #define AUCTION_MANAGER_H
 
 #include <vector>
+#include <string>
 
 struct AuctionState {
     std::string aID_string;
