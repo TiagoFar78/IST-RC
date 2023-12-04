@@ -12,6 +12,9 @@ struct AuctionState {
 int login(int uID, const std::string& password);
 int logout(int uID);
 int unregister(int uID);
+bool is_logged_in(int uID);
+bool is_registered(int uID);
+bool is_password_correct(int uID, std::string password);
 std::vector<AuctionState> list_auctions_target(int uID);
 std::vector<AuctionState> list_bids_target(int uID);
 std::vector<AuctionState> list_auctions();

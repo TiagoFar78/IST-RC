@@ -14,11 +14,17 @@ using namespace std;
 #define PASSWORD_LENGTH 8
 
 string LOGIN_COMMAND = "LIN";
+string LOGOUT_COMMAND = "LOU";
+string UNREGISTER_COMMAND = "UNR";
 
 string LOGIN_REPLY = "RLI";
+string LOGOUT_REPLY = "RLO";
+string UNREGISTER_REPLY = "RUR";
+
 string OK_REPLY = "OK";
 string NOT_OK_REPLY = "NOK";
 string REGISTERED_REPLY = "REG";
+string NOT_REGISTERED_REPLY = "UNR";
 
 string ERROR_REPLY = "ERR";
 
@@ -33,8 +39,12 @@ vector<string> split_string(string input, char delimiter);
 string process_request(string request);
 string process_request(vector<string> request_arguments);
 string process_login_attempt(vector<string> request_arguments);
+string process_logout_attempt(vector<string> request_arguments);
+string process_unregister_attempt(vector<string> request_arguments);
 
 bool is_unexpected_login_input(vector<string> arguments);
+bool is_unexpected_logout_input(vector<string> arguments);
+bool is_unexpected_unregister_input(vector<string> arguments);
 
 // #------------------------------------------------------------------#
 // |                         Useful Functions                         |
@@ -78,6 +88,12 @@ string process_request(vector<string> request_arguments) {
     if (command == LOGIN_COMMAND) {
         return LOGIN_REPLY + " " + process_login_attempt(request_arguments) + "\n";
     }
+    else if (command == LOGOUT_COMMAND) {
+        return LOGOUT_REPLY + " " + process_logout_attempt(request_arguments) + "\n";
+    }
+    else if (command == UNREGISTER_COMMAND) {
+        return UNREGISTER_REPLY + " " + process_unregister_attempt(request_arguments) + "\n";
+    }
 
     return ERROR_REPLY + "\n";
 }
@@ -89,15 +105,71 @@ string process_login_attempt(vector<string> request_arguments) {
 
     int uID = atoi(request_arguments[0].c_str());
     string password = request_arguments[1];
-    int login_result = login(uID, password);
+    int returnCode = login(uID, password);
 
-    switch (login_result) {
+    switch (returnCode) {
     case 0:
         return OK_REPLY;
     case -1:
         return NOT_OK_REPLY;
     case 1:
         return REGISTERED_REPLY;
+    }
+
+    exit(1);
+    return EXCEPTION_LIKE_ERROR;
+}
+
+string process_logout_attempt(vector<string> request_arguments) {
+    if (is_unexpected_logout_input(request_arguments)) {
+        return ERROR_REPLY;
+    }
+
+    int uID = atoi(request_arguments[0].c_str());
+    string password = request_arguments[1];
+    
+    if (is_registered(uID)) {
+        if (!is_password_correct(uID, password)) {
+            return NOT_OK_REPLY;
+        }
+    }
+
+    int returnCode = logout(uID);
+    switch (returnCode) {
+    case 0:
+        return OK_REPLY;
+    case -1:
+        return NOT_OK_REPLY;
+    case -2:
+        return NOT_REGISTERED_REPLY;
+    }
+
+    exit(1);
+    return EXCEPTION_LIKE_ERROR;
+}
+
+string process_unregister_attempt(vector<string> request_arguments) {
+    if (is_unexpected_unregister_input(request_arguments)) {
+        return ERROR_REPLY;
+    }
+
+    int uID = atoi(request_arguments[0].c_str());
+    string password = request_arguments[1];
+
+    if (is_registered(uID)) {
+        if (!is_password_correct(uID, password)) {
+            return NOT_OK_REPLY;
+        }
+    }
+
+    int returnCode = unregister(uID);
+    switch (returnCode) {
+    case 0:
+        return OK_REPLY;
+    case -1:
+        return NOT_OK_REPLY;
+    case -2:
+        return NOT_REGISTERED_REPLY;
     }
 
     exit(1);
@@ -123,6 +195,14 @@ bool is_unexpected_login_input(vector<string> arguments) {
     }
 
     return false;
+}
+
+bool is_unexpected_logout_input(vector<string> arguments) {
+    return is_unexpected_login_input(arguments); // Same parameters
+}
+
+bool is_unexpected_unregister_input(vector<string> arguments) {
+    return is_unexpected_login_input(arguments); // Same parameters
 }
 
 // #------------------------------------------------------------------#

@@ -1,6 +1,5 @@
 #include <string>
 #include <cassert>
-#include <iostream>
 #include <filesystem>
 #include "../../Server.h"
 

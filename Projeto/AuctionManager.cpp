@@ -243,6 +243,56 @@ int unregister(int uID) {
     return 0;
 }
 
+/*
+ * Return:
+ * 0 - false
+ * 1 - true
+ */
+bool is_logged_in(int uID) {
+    string uID_string = to_string(uID);
+
+    string login_file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + "_login.txt";
+
+    return file_exists(login_file_name);
+}
+
+
+/*
+ * Return:
+ * 0 - false
+ * 1 - true
+ */
+bool is_registered(int uID) {
+    string uID_string = to_string(uID);
+
+    string pass_file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + "_pass.txt";
+
+    return file_exists(pass_file_name);
+}
+
+
+/*
+ * Return:
+ * 0 - false
+ * 1 - true
+ */
+bool is_password_correct(int uID, string password) {
+    string uID_string = to_string(uID);
+
+    string pass_file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + "_pass.txt";
+    if (!file_exists(pass_file_name)) {
+        return false;
+    }
+
+    string registered_password = "";
+    read_from_file(pass_file_name, registered_password);
+    if (registered_password == "") {
+        return false;
+    }
+
+    return password == registered_password;
+}
+
 
 // > ----------------------- { Lists & Show } ----------------------- <
 
