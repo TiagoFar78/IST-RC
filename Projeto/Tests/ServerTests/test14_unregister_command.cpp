@@ -7,7 +7,7 @@ using namespace std;
 
 int main() {
     // #-----------------------------------------------------------------#
-    // |                    Teste 13 - Logout Command                    |
+    // |                  Teste 14 - Unregister Command                  |
     // #-----------------------------------------------------------------#
 
     string reply = process_request("UNR");

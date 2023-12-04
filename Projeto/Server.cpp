@@ -16,15 +16,18 @@ using namespace std;
 string LOGIN_COMMAND = "LIN";
 string LOGOUT_COMMAND = "LOU";
 string UNREGISTER_COMMAND = "UNR";
+string LIST_AUCTIONS_TARGET_COMMAND = "LMA";
 
 string LOGIN_REPLY = "RLI";
 string LOGOUT_REPLY = "RLO";
 string UNREGISTER_REPLY = "RUR";
+string LIST_AUCTIONS_TARGET_REPLY = "RMA";
 
 string OK_REPLY = "OK";
 string NOT_OK_REPLY = "NOK";
 string REGISTERED_REPLY = "REG";
 string NOT_REGISTERED_REPLY = "UNR";
+string NOT_LOGGED_IN_REPLY = "NLG";
 
 string ERROR_REPLY = "ERR";
 
@@ -41,10 +44,12 @@ string process_request(vector<string> request_arguments);
 string process_login_attempt(vector<string> request_arguments);
 string process_logout_attempt(vector<string> request_arguments);
 string process_unregister_attempt(vector<string> request_arguments);
+string process_list_auctions_target(vector<string> request_arguments);
 
 bool is_unexpected_login_input(vector<string> arguments);
 bool is_unexpected_logout_input(vector<string> arguments);
 bool is_unexpected_unregister_input(vector<string> arguments);
+bool is_unexpected_list_auctions_target_input(vector<string> arguments);
 
 // #------------------------------------------------------------------#
 // |                         Useful Functions                         |
@@ -93,6 +98,9 @@ string process_request(vector<string> request_arguments) {
     }
     else if (command == UNREGISTER_COMMAND) {
         return UNREGISTER_REPLY + " " + process_unregister_attempt(request_arguments) + "\n";
+    }
+    else if (command == LIST_AUCTIONS_TARGET_COMMAND) {
+        return LIST_AUCTIONS_TARGET_REPLY + " " + process_list_auctions_target(request_arguments) + "\n";
     }
 
     return ERROR_REPLY + "\n";
@@ -173,7 +181,32 @@ string process_unregister_attempt(vector<string> request_arguments) {
     }
 
     exit(1);
-    return EXCEPTION_LIKE_ERROR;
+    //return EXCEPTION_LIKE_ERROR;
+}
+
+string process_list_auctions_target(vector<string> request_arguments) {
+    if (is_unexpected_list_auctions_target_input(request_arguments)) {
+        return ERROR_REPLY;
+    }
+
+    int uID = atoi(request_arguments[0].c_str());
+
+    if (!is_logged_in(uID)) {
+        return NOT_LOGGED_IN_REPLY;
+    }
+
+    vector<AuctionState> auctions = list_auctions_target(uID);
+
+    if (auctions.size() == 0) {
+        return NOT_OK_REPLY;
+    }
+
+    string auctions_string = "";
+    for (int i = 0; i < auctions.size(); i++) {
+        auctions_string += " " + auctions[i].aID_string + " " + to_string(auctions[i].state);
+    }
+
+    return OK_REPLY + auctions_string;
 }
 
 // #------------------------------------------------------------------#
@@ -203,6 +236,19 @@ bool is_unexpected_logout_input(vector<string> arguments) {
 
 bool is_unexpected_unregister_input(vector<string> arguments) {
     return is_unexpected_login_input(arguments); // Same parameters
+}
+
+bool is_unexpected_list_auctions_target_input(vector<string> arguments) {
+    if (arguments.size() != 1) {
+        return true;
+    }
+
+    int uID = atoi(arguments[0].c_str());
+    if (uID == 0 || uID > 999999 || uID < 100000) { // TODO Fazer isto com digit count quando houver paciencia
+        return true;
+    }
+
+    return false;
 }
 
 // #------------------------------------------------------------------#
