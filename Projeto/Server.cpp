@@ -18,6 +18,10 @@ string UNREGISTER_COMMAND = "UNR";
 string LIST_AUCTIONS_TARGET_COMMAND = "LMA";
 string LIST_AUCTIONS_COMMAND = "LST";
 string LIST_BIDS_TARGET_COMMAND = "LMB";
+string SHOW_RECORD_COMMAND = "SRC";
+string OPEN_COMMAND = "OPA";
+string CLOSE_COMMAND = "CLS";
+string BID_COMMAND = "BID";
 
 string LOGIN_REPLY = "RLI";
 string LOGOUT_REPLY = "RLO";
@@ -25,12 +29,22 @@ string UNREGISTER_REPLY = "RUR";
 string LIST_AUCTIONS_TARGET_REPLY = "RMA";
 string LIST_AUCTIONS_REPLY = "RLS";
 string LIST_BIDS_TARGET_REPLY = "RMB";
+string SHOW_RECORD_REPLY = "RRC";
+string OPEN_REPLY = "ROA";
+string CLOSE_REPLY = "RCL";
+string BID_REPLY = "RBD";
 
 string OK_REPLY = "OK";
 string NOT_OK_REPLY = "NOK";
 string REGISTERED_REPLY = "REG";
 string NOT_REGISTERED_REPLY = "UNR";
 string NOT_LOGGED_IN_REPLY = "NLG";
+string AUCTION_ID_DOES_NOT_EXIST_REPLY = "EAU";
+string NOT_AUCTION_OWNER_REPLY = "EOW";
+string AUCTION_ENDED_REPLY = "END";
+string BID_ACCEPTED_REPLY = "ACC";
+string LOW_BID_REPLY = "REF";
+string BID_ON_OWN_AUCTION_REPLY = "ILG";
 
 string ERROR_REPLY = "ERR";
 
@@ -50,13 +64,9 @@ string process_unregister_attempt(vector<string> request_arguments);
 string process_list_auctions_target(vector<string> request_arguments);
 string process_list_auctions(vector<string> request_arguments);
 string process_list_bids_target(vector<string> request_arguments);
-
-bool is_unexpected_login_input(vector<string> arguments);
-bool is_unexpected_logout_input(vector<string> arguments);
-bool is_unexpected_unregister_input(vector<string> arguments);
-bool is_unexpected_list_auctions_target_input(vector<string> arguments);
-bool is_unexpected_list_auctions_input(vector<string> arguments);
-bool is_unexpected_list_bids_target_input(vector<string> arguments);
+string process_show_record(vector<string> request_arguments);
+string process_open_attempt(vector<string> request_arguments);
+string process_close_attempt(vector<string> request_arguments);
 
 // #------------------------------------------------------------------#
 // |                         Useful Functions                         |
@@ -82,7 +92,7 @@ bool is_unexpected_list_bids_target_input(vector<string> arguments);
 }*/
 
 // #-------------------------------------------------------------------#
-// |                          Request Process                          |
+// |                          Process Request                          |
 // #-------------------------------------------------------------------#
 
 string process_request(string request) {
@@ -114,6 +124,18 @@ string process_request(vector<string> request_arguments) {
     }
     else if (command == LIST_BIDS_TARGET_COMMAND) {
         return LIST_BIDS_TARGET_REPLY + " " + process_list_bids_target(request_arguments) + "\n";
+    }
+    else if (command == SHOW_RECORD_COMMAND) {
+        return SHOW_RECORD_REPLY + " " + process_list_bids_target(request_arguments) + "\n";
+    }
+    else if (command == OPEN_COMMAND) {
+        return OPEN_REPLY + " " + process_open_attempt(request_arguments) + "\n";
+    }
+    else if (command == CLOSE_COMMAND) {
+        return CLOSE_REPLY + " " + process_close_attempt(request_arguments) + "\n";
+    }
+    else if (command == BID_COMMAND) {
+        return BID_REPLY + " " + process_bid_attempt(request_arguments) + "\n";
     }
 
     return ERROR_REPLY + "\n";
@@ -264,6 +286,131 @@ string process_list_bids_target(vector<string> request_arguments) {
     }
 
     return OK_REPLY + auctions_string;
+}
+
+string process_show_record(vector<string> request_arguments) {
+    if (is_unexpected_show_record_input(request_arguments)) {
+        return ERROR_REPLY;
+    }
+
+    int aID = atoi(request_arguments[0].c_str());
+
+    vector<string> start_details = get_auction_start_details(aID);
+    if (start_details.size() == 0) {
+        return NOT_OK_REPLY;
+    }
+
+    string record_string = " " start_details[0] + " " + start_details[1] + " " + start_details[2] + " " + 
+        start_details[3] + " " + start_details[5] + " " + start_details[6] + " " + start_details[4];
+
+    vector<string> bids_details = get_auction_bids_details(aID);
+    if (bids_details.size() != 0) {
+        for (int i = 0; i < bids_details.size(); i++) {
+            record_string += " B " + bids_details[i][0] + " " + bids_details[i][1] + " " + bids_details[i][2] + " " +
+                bids_details[i][3] + " " + bids_details[i][4];
+        }
+    }
+
+    vector<string> end_details = get_auction_end_details(aID);
+    if (end_details.size() != 0) {
+        record_string += " E " + end_details[0] + " " end_details[1] + " " + end_details[2];
+    }
+
+    return OK_REPLY + record_string;
+}
+
+string process_open_attempt(vector<string> request_arguments) {
+    if (is_unexpected_open_input(request_arguments)) {
+        return ERROR_REPLY;
+    }
+
+    // ler esta bomba de alguma forma
+    int uID = atoi(request_arguments[0].c_str());
+    string password = request_arguments[1];
+    string name = request_arguments[2];
+    int value = atoi(request_arguments[3].c_str());
+    int time_active = atoi(request_arguments[4].c_str());
+    string file_name = request_arguments[5];
+    int file_size = atoi(request_arguments[6].c_str());
+    string file_data = request_arguments[7];
+
+    if (!is_password_correct(uID, password)) {
+        return NOT_OK_REPLY;
+    }
+
+    int return_code = open_auction(uID, name, value, time_active, file_name, file_size, file_data);
+    if (return_code == -1) {
+        return NOK_REPLY;
+    }
+    else if (return_code == -2) {
+        return NOT_LOGGED_IN_REPLY
+    }
+
+    // deposita o conteudo no ficheiro???
+
+    return OK_REPLY + " " + return_code;
+}
+
+string process_close_attempt(vector<string> request_arguments) {
+    if (is_unexpected_close_input(request_arguments)) {
+        return ERROR_REPLY;
+    }
+
+    int uID = atoi(request_arguments[0].c_str());
+    string password = request_arguments[1];
+    int aID = atoi(request_arguments[2].c_str());
+
+    if (!is_password_correct(uID, password)) {
+        return NOT_OK_REPLY;
+    }
+
+    int return_code = close(uID, aID);
+    if (return_code == -1) {
+        return NOT_LOGGED_IN_REPLY;
+    }
+    else if (return_code == -2) {
+        return AUCTION_ID_DOES_NOT_EXIST_REPLY;
+    }
+    else if (return_code == -3) {
+        return NOT_AUCTION_OWNER_REPLY;
+    }
+    else if (return_code == -4) {
+        return AUCTION_ENDED_REPLY;
+    }
+
+    return OK_REPLY;
+}
+
+string process_bid_attempt(vector<string> request_arguments) {
+    if (is_unexpected_bid_input(request_arguments)) {
+        return ERROR_REPLY;
+    }
+
+    int uID = atoi(request_arguments[0].c_str());
+    string password = request_arguments[1];
+    int aID = atoi(request_arguments[2].c_str());
+    int value = atoi(request_arguments[3].c_str());
+
+    if (!is_logged_in(uID)) {
+        return NOT_LOGGED_IN_REPLY;
+    }
+
+    if (!is_password_correct(uID, password)) {
+        return NOT_OK_REPLY;
+    }
+
+    int return_code = bid(uID, aID, value);
+    if (return_code == -1) {
+        return NOT_OK_REPLY;
+    }
+    else if (return_code == -2) {
+        return LOW_BID_REPLY;
+    }
+    else if (return_code == -3) {
+        return BID_ON_OWN_AUCTION_REPLY;
+    }
+
+    return BID_ACCEPTED_REPLY;
 }
 
 // #------------------------------------------------------------------#

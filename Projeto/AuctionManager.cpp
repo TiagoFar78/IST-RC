@@ -397,7 +397,7 @@ vector<AuctionState> list_auctions() {
 /*
  * Return:
  * Auction info
- * NULL if does not exist auction
+ * empty if does not exist auction
  */
 vector<string> get_auction_start_details(int aID) {
     string aID_string = add_zeros_before(3, aID);
@@ -415,6 +415,11 @@ vector<string> get_auction_start_details(int aID) {
             //contents[5] + " " + contents[6] + " " + contents[4];
 }
 
+/*
+ * Return:
+ * Auction bids info
+ * empty if there are no bids
+ */
 vector<vector<string>> get_auction_bids_details(int aID) {    
     vector<vector<string>> bids_details;
     
@@ -435,6 +440,11 @@ vector<vector<string>> get_auction_bids_details(int aID) {
     return bids_details;
 }
 
+/*
+ * Return:
+ * Auction end info
+ * empty if is still ongoing
+ */
 vector<string> get_auction_end_details(int aID) {
     string aID_string = add_zeros_before(3, aID);
     string end_file_name = "ASDIR/AUCTIONS/" + aID_string + "/END_" + aID_string + ".txt";
@@ -592,6 +602,7 @@ int close(int uID, int aID) {
     string uID_string = to_string(uID);
     string aID_string = add_zeros_before(3, aID);
 
+    // TODO remover not logged in daqui
     string login_file_name = "ASDIR/USERS/" + uID_string + "/" + uID_string + "_login.txt";
     if (!file_exists(login_file_name)) {
         return -1;
