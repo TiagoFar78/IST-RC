@@ -17,11 +17,15 @@ string LOGIN_COMMAND = "LIN";
 string LOGOUT_COMMAND = "LOU";
 string UNREGISTER_COMMAND = "UNR";
 string LIST_AUCTIONS_TARGET_COMMAND = "LMA";
+string LIST_AUCTIONS_COMMAND = "LST";
+string LIST_BIDS_TARGET_COMMAND = "LMB";
 
 string LOGIN_REPLY = "RLI";
 string LOGOUT_REPLY = "RLO";
 string UNREGISTER_REPLY = "RUR";
 string LIST_AUCTIONS_TARGET_REPLY = "RMA";
+string LIST_AUCTIONS_REPLY = "RLS";
+string LIST_BIDS_TARGET_REPLY = "RMB";
 
 string OK_REPLY = "OK";
 string NOT_OK_REPLY = "NOK";
@@ -45,11 +49,15 @@ string process_login_attempt(vector<string> request_arguments);
 string process_logout_attempt(vector<string> request_arguments);
 string process_unregister_attempt(vector<string> request_arguments);
 string process_list_auctions_target(vector<string> request_arguments);
+string process_list_auctions(vector<string> request_arguments);
+string process_list_bids_target(vector<string> request_arguments);
 
 bool is_unexpected_login_input(vector<string> arguments);
 bool is_unexpected_logout_input(vector<string> arguments);
 bool is_unexpected_unregister_input(vector<string> arguments);
 bool is_unexpected_list_auctions_target_input(vector<string> arguments);
+bool is_unexpected_list_auctions_input(vector<string> arguments);
+bool is_unexpected_list_bids_target_input(vector<string> arguments);
 
 // #------------------------------------------------------------------#
 // |                         Useful Functions                         |
@@ -101,6 +109,12 @@ string process_request(vector<string> request_arguments) {
     }
     else if (command == LIST_AUCTIONS_TARGET_COMMAND) {
         return LIST_AUCTIONS_TARGET_REPLY + " " + process_list_auctions_target(request_arguments) + "\n";
+    }
+    else if (command == LIST_AUCTIONS_COMMAND) {
+        return LIST_AUCTIONS_REPLY + " " + process_list_auctions(request_arguments) + "\n";
+    }
+    else if (command == LIST_BIDS_TARGET_COMMAND) {
+        return LIST_BIDS_TARGET_REPLY + " " + process_list_bids_target(request_arguments) + "\n";
     }
 
     return ERROR_REPLY + "\n";
@@ -209,6 +223,50 @@ string process_list_auctions_target(vector<string> request_arguments) {
     return OK_REPLY + auctions_string;
 }
 
+string process_list_auctions(vector<string> request_arguments) {
+    if (is_unexpected_list_auctions_input(request_arguments)) {
+        return ERROR_REPLY;
+    }
+
+    vector<AuctionState> auctions = list_auctions();
+
+    if (auctions.size() == 0) {
+        return NOT_OK_REPLY;
+    }
+
+    string auctions_string = "";
+    for (int i = 0; i < auctions.size(); i++) {
+        auctions_string += " " + auctions[i].aID_string + " " + to_string(auctions[i].state);
+    }
+
+    return OK_REPLY + auctions_string;
+}
+
+string process_list_bids_target(vector<string> request_arguments) {
+    if (is_unexpected_list_bids_target_input(request_arguments)) {
+        return ERROR_REPLY;
+    }
+
+    int uID = atoi(request_arguments[0].c_str());
+
+    if (!is_logged_in(uID)) {
+        return NOT_LOGGED_IN_REPLY;
+    }
+
+    vector<AuctionState> auctions = list_bids_target(uID);
+
+    if (auctions.size() == 0) {
+        return NOT_OK_REPLY;
+    }
+
+    string auctions_string = "";
+    for (int i = 0; i < auctions.size(); i++) {
+        auctions_string += " " + auctions[i].aID_string + " " + to_string(auctions[i].state);
+    }
+
+    return OK_REPLY + auctions_string;
+}
+
 // #------------------------------------------------------------------#
 // |                        Input Verification                        |
 // #------------------------------------------------------------------#
@@ -249,6 +307,14 @@ bool is_unexpected_list_auctions_target_input(vector<string> arguments) {
     }
 
     return false;
+}
+
+bool is_unexpected_list_auctions_input(vector<string> arguments) {
+    return arguments.size() != 0;
+}
+
+bool is_unexpected_list_bids_target_input(vector<string> arguments) {
+    return is_unexpected_list_auctions_target_input(arguments);
 }
 
 // #------------------------------------------------------------------#
