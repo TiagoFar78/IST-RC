@@ -265,7 +265,7 @@ bool is_unexpected_bid_input(vector<string> arguments, bool is_from_client) {
 
 bool is_unexpected_open_input(vector<string> arguments, bool is_from_client) {
     string name, value, timeactive, fname;
-    if(bool is_from_client) {
+    if(is_from_client) {
         if (arguments.size() != 4) {
             return true;
         }
@@ -273,7 +273,7 @@ bool is_unexpected_open_input(vector<string> arguments, bool is_from_client) {
         name = arguments[0];
         fname = arguments[1];
         value = arguments[2];
-        timeactive = arguments[3]
+        timeactive = arguments[3];
 
     } else {
         //TODO tiago

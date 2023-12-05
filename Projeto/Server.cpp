@@ -300,7 +300,7 @@ string process_show_record(vector<string> request_arguments) {
         return NOT_OK_REPLY;
     }
 
-    string record_string = " " start_details[0] + " " + start_details[1] + " " + start_details[2] + " " + 
+    string record_string = " " + start_details[0] + " " + start_details[1] + " " + start_details[2] + " " + 
         start_details[3] + " " + start_details[5] + " " + start_details[6] + " " + start_details[4];
 
     vector<string> bids_details = get_auction_bids_details(aID);
@@ -313,14 +313,14 @@ string process_show_record(vector<string> request_arguments) {
 
     vector<string> end_details = get_auction_end_details(aID);
     if (end_details.size() != 0) {
-        record_string += " E " + end_details[0] + " " end_details[1] + " " + end_details[2];
+        record_string += " E " + end_details[0] + " " + end_details[1] + " " + end_details[2];
     }
 
     return OK_REPLY + record_string;
 }
 
 string process_open_attempt(vector<string> request_arguments) {
-    if (is_unexpected_open_input(request_arguments)) {
+    if (is_unexpected_open_input(request_arguments, false)) {
         return ERROR_REPLY;
     }
 
@@ -340,19 +340,19 @@ string process_open_attempt(vector<string> request_arguments) {
 
     int return_code = open_auction(uID, name, value, time_active, file_name, file_size, file_data);
     if (return_code == -1) {
-        return NOK_REPLY;
+        return NOT_OK_REPLY;
     }
     else if (return_code == -2) {
-        return NOT_LOGGED_IN_REPLY
+        return NOT_LOGGED_IN_REPLY;
     }
 
     // deposita o conteudo no ficheiro???
 
-    return OK_REPLY + " " + return_code;
+    return OK_REPLY + " " + to_string(return_code);
 }
 
 string process_close_attempt(vector<string> request_arguments) {
-    if (is_unexpected_close_input(request_arguments)) {
+    if (is_unexpected_close_input(request_arguments, false)) {
         return ERROR_REPLY;
     }
 
@@ -382,7 +382,7 @@ string process_close_attempt(vector<string> request_arguments) {
 }
 
 string process_bid_attempt(vector<string> request_arguments) {
-    if (is_unexpected_bid_input(request_arguments)) {
+    if (is_unexpected_bid_input(request_arguments, false)) {
         return ERROR_REPLY;
     }
 
