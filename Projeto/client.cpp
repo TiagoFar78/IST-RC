@@ -172,7 +172,6 @@ string translateInput(string command, vector<string> input) {
         prefix = "OPA ";
         string fileContents;
         
-        //TODO verificar se correu bem a ambas as funcoes
         read_from_file(input[1], fileContents);
         string fileSize = to_string(getFileSize(input[1]));
 
@@ -289,7 +288,7 @@ string translateOutput(string message) {
 
     } else if (command == "RCL") {
         if (status == "OK\n") {
-            return "successful " + output[2];
+            return "successfully closed";
 
         } else if (status == "NLG\n") {
             return "user not logged in\n";
@@ -306,12 +305,14 @@ string translateOutput(string message) {
 
     } else if (command == "RMA") {
         if (status == "OK") {
-            string message;
+            string message, status;
+
             for(int i = 2; i < output.size() - 1; i = i + 2) {
-                message += output[i] + " " + output[i + 1];
-                if(i != output.size() - 2) {
-                    message += "\n";
-                }
+                status = "active\n";
+                if(output[i + 1] == "0" || output[i + 1] == "0\n") {
+                    status = "inactive\n";
+                } 
+                message += output[i] + " " + status;
             }
             return message;
         
@@ -324,12 +325,13 @@ string translateOutput(string message) {
     
     } else if (command == "RMB") {
         if (status == "OK") {
-            string message;
+            string message, status;
             for(int i = 2; i < output.size() - 1; i = i + 2) {
-                message += output[i] + " " + output[i + 1];
-                if(i != output.size() - 2) {
-                    message += "\n";
+                status = "active";
+                 if(output[i + 1] == "0" || output[i + 1] == "0\n") {
+                    status = "inactive";
                 }
+                message += output[i] + " " + status + "\n";
             }
             return message;
         
@@ -342,12 +344,13 @@ string translateOutput(string message) {
 
     } else if (command == "RLS") {
         if (status == "OK") {
-            string message;
+            string message, status;
             for(int i = 2; i < output.size() - 1; i = i + 2) {
-                message += output[i] + " " + output[i + 1];
-                if(i != output.size() - 2) {
-                    message += "\n";
+                status = "active";
+                if(output[i + 1] == "0" || output[i + 1] == "0\n") {
+                    status = "inactive";
                 }
+                message += output[i] + " " + status + "\n";
             }
             return message;
         
@@ -356,17 +359,7 @@ string translateOutput(string message) {
         }
         
     } else if (command == "RBD") {
-        if (status == "OK") {
-            string message;
-            for(int i = 2; i < output.size() - 1; i = i + 2) {
-                message += output[i] + " " + output[i + 1];
-                if(i != output.size() - 2) {
-                    message += "\n";
-                }
-            }
-            return message;
-        
-        } else if (status == "NOK\n") {
+        if (status == "NOK\n") {
             return "auction is not active\n";
 
         } else if (status == "NLG\n") {
@@ -384,8 +377,21 @@ string translateOutput(string message) {
 
     } else if (command == "RRC") {
         if (status == "OK") {
-            //TODO pq é q n vem com \n
-            return message;
+            string print;
+            for(int i = 2; i < output.size(); i ++) {
+                if (output[i] == "E")
+                    print += "\nEnded ";
+                else if (output[i] == "B")
+                    print += "\nBid ";
+                else{
+                    cout << "entrei\n";
+                    print += output[i];
+                }
+                if (i != output.size()-1)
+                    print += " ";
+            }
+
+            return print;
         
         } else if (status == "NOK\n") {
             return "auction does not exist\n";
@@ -520,13 +526,6 @@ int main() {
 
         vector<string> input = splitString(write_buffer, ' ');
         command = input[0];
-
-        // for (size_t i = 1; i < input.size(); i++) {
-        //     arguments += input[i];
-
-        //     if (i != (input.size() - 1))
-        //         arguments += " ";
-        // }
 
         translated_message = translateInput(command, input);
         if (translated_message == "invalid")
