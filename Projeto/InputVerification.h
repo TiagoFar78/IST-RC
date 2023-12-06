@@ -25,7 +25,7 @@ bool is_unexpected_show_record_input(vector<string> arguments);
 bool is_unexpected_close_input(vector<string> arguments, bool is_from_client);
 bool is_unexpected_show_asset_input(vector<string> arguments);
 bool is_unexpected_bid_input(vector<string> arguments, bool is_from_client);
-bool is_unexpected_open_input(vector<string> arguments, bool is_from_client)
+bool is_unexpected_open_input(vector<string> arguments, bool is_from_client);
 
 
 #endif
