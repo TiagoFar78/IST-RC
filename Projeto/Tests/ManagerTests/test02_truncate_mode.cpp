@@ -1,7 +1,7 @@
 
 #include <string>
 #include <cassert>
-#include "../AuctionManager.h"
+#include "../../AuctionManager.h"
 
 using namespace std;
 

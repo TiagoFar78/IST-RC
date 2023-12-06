@@ -14,8 +14,8 @@ bool compareFunction (string a, string b) {return a<b;}
 int main() {
     vector<string> test_files;
 
-    // Iterate through files in the "Testes" folder
-    for (const auto& entry : fs::directory_iterator("Tests")) {
+    // Iterate through files in the "Testes/ManagerTests" folder
+    for (const auto& entry : fs::directory_iterator("Tests/ManagerTests")) {
         string entry_name = entry.path().filename().string();
         if (entry.is_regular_file() && entry_name.substr(0, 4) == "test" && 
                 entry_name.substr(entry_name.length() - 4, entry_name.length()) == ".cpp") {
@@ -24,6 +24,10 @@ int main() {
     }
 
     sort(test_files.begin(), test_files.end());
+
+    if (test_files.size() > 0) {
+        cout << endl << ">---------------------------------------------{ Manager Tests }---------------------------------------------<" << endl << endl;
+    }
 
     // Run each test file
     for (const auto& test_file : test_files) {
@@ -58,6 +62,10 @@ int main() {
     }
 
     sort(test_files.begin(), test_files.end());
+
+    if (test_files.size() > 0) {
+        cout << endl << ">---------------------------------------------{ Server Tests }---------------------------------------------<" << endl << endl;
+    }
 
     // Run each test file
     for (const auto& test_file : test_files) {

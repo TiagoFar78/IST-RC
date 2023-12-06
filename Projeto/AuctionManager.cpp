@@ -422,15 +422,15 @@ vector<string> get_auction_start_details(int aID) {
  */
 vector<vector<string>> get_auction_bids_details(int aID) {    
     vector<vector<string>> bids_details;
-    
+
     string aID_string = add_zeros_before(3, aID);
     string start_file_name = "ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt";
-    if (!file_exists(start_file_name)) {
+    if (!file_exists(start_file_name) || !fs::exists("ASDIR/AUCTIONS/" + aID_string + "/BIDS")) {
         return bids_details;
     }
 
     for (const auto& entry : fs::directory_iterator("ASDIR/AUCTIONS/" + aID_string + "/BIDS")) {
-        string bid_file_name = entry.path().filename().string();
+        string bid_file_name = entry.path().string();
 
         string bid_file_contents;
         read_from_file(bid_file_name, bid_file_contents);
@@ -446,6 +446,10 @@ vector<vector<string>> get_auction_bids_details(int aID) {
  * empty if is still ongoing
  */
 vector<string> get_auction_end_details(int aID) {
+    if (auction_expired_time(aID) != -1) {
+        close(aID);
+    }
+
     string aID_string = add_zeros_before(3, aID);
     string end_file_name = "ASDIR/AUCTIONS/" + aID_string + "/END_" + aID_string + ".txt";
     if (!file_exists(end_file_name)) {
@@ -657,12 +661,23 @@ int bid(int uID, int aID, int value) {
         return -1;
     }
 
+    if (auction_expired_time(aID) != -1) {
+        close(aID);
+    }
+
     string end_file_name = "ASDIR/AUCTIONS/" + aID_string + "/END_" + aID_string + ".txt";
     if (file_exists(end_file_name)) {
         return -1;
     }
 
     int higher_bid = get_higher_bid(aID);
+    if (higher_bid == 0) {
+        string start_file_contents;
+        read_from_file(start_file_name, start_file_contents);
+
+        higher_bid = atoi(split_string(start_file_contents, ' ')[3].c_str());
+    }
+
     if (value <= higher_bid) {
         return -2;
     }

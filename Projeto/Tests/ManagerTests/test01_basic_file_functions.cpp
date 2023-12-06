@@ -3,7 +3,7 @@
 #include <ostream>
 #include <cassert>
 #include <filesystem>
-#include "../AuctionManager.h"
+#include "../../AuctionManager.h"
 
 using namespace std;
 

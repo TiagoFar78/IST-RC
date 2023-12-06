@@ -67,6 +67,7 @@ string process_list_bids_target(vector<string> request_arguments);
 string process_show_record(vector<string> request_arguments);
 string process_open_attempt(vector<string> request_arguments);
 string process_close_attempt(vector<string> request_arguments);
+string process_bid_attempt(vector<string> request_arguments);
 
 // #------------------------------------------------------------------#
 // |                         Useful Functions                         |
@@ -126,7 +127,7 @@ string process_request(vector<string> request_arguments) {
         return LIST_BIDS_TARGET_REPLY + " " + process_list_bids_target(request_arguments) + "\n";
     }
     else if (command == SHOW_RECORD_COMMAND) {
-        return SHOW_RECORD_REPLY + " " + process_list_bids_target(request_arguments) + "\n";
+        return SHOW_RECORD_REPLY + " " + process_show_record(request_arguments) + "\n";
     }
     else if (command == OPEN_COMMAND) {
         return OPEN_REPLY + " " + process_open_attempt(request_arguments) + "\n";
@@ -303,7 +304,8 @@ string process_show_record(vector<string> request_arguments) {
     string record_string = " " + start_details[0] + " " + start_details[1] + " " + start_details[2] + " " + 
         start_details[3] + " " + start_details[5] + " " + start_details[6] + " " + start_details[4];
 
-    vector<string> bids_details = get_auction_bids_details(aID);
+    vector<vector<string>> bids_details = get_auction_bids_details(aID);
+
     if (bids_details.size() != 0) {
         for (int i = 0; i < bids_details.size(); i++) {
             record_string += " B " + bids_details[i][0] + " " + bids_details[i][1] + " " + bids_details[i][2] + " " +
@@ -320,7 +322,7 @@ string process_show_record(vector<string> request_arguments) {
 }
 
 string process_open_attempt(vector<string> request_arguments) {
-    if (is_unexpected_open_input(request_arguments, false)) {
+    if (is_unexpected_open_input(request_arguments)) {
         return ERROR_REPLY;
     }
 
@@ -352,7 +354,7 @@ string process_open_attempt(vector<string> request_arguments) {
 }
 
 string process_close_attempt(vector<string> request_arguments) {
-    if (is_unexpected_close_input(request_arguments, false)) {
+    if (is_unexpected_close_input(request_arguments)) {
         return ERROR_REPLY;
     }
 
@@ -382,7 +384,7 @@ string process_close_attempt(vector<string> request_arguments) {
 }
 
 string process_bid_attempt(vector<string> request_arguments) {
-    if (is_unexpected_bid_input(request_arguments, false)) {
+    if (is_unexpected_bid_input(request_arguments)) {
         return ERROR_REPLY;
     }
 
@@ -391,12 +393,12 @@ string process_bid_attempt(vector<string> request_arguments) {
     int aID = atoi(request_arguments[2].c_str());
     int value = atoi(request_arguments[3].c_str());
 
-    if (!is_logged_in(uID)) {
-        return NOT_LOGGED_IN_REPLY;
-    }
-
     if (!is_password_correct(uID, password)) {
         return NOT_OK_REPLY;
+    }
+
+    if (!is_logged_in(uID)) {
+        return NOT_LOGGED_IN_REPLY;
     }
 
     int return_code = bid(uID, aID, value);

@@ -2,13 +2,13 @@
 #include <cassert>
 #include <iostream>
 #include <filesystem>
-#include "../AuctionManager.h"
+#include "../../AuctionManager.h"
 
 using namespace std;
 
 int main() {
     // #------------------------------------------------------------------#
-    // |                         Teste 4 - Logout                         |
+    // |                       Teste 5 - Unregister                       |
     // #------------------------------------------------------------------#
 
     int uID = 103327;
@@ -25,7 +25,7 @@ int main() {
     assert(file_exists(pass_file) == 0);
     assert(file_exists(login_file) == 0);
 
-    assert(logout(uID) == -2);
+    assert(unregister(uID) == -2);
 
     assert(login(uID, password) == 1);
 
@@ -37,12 +37,31 @@ int main() {
     assert(file_exists(pass_file) == 1);
     assert(file_exists(login_file) == 0);
 
-    assert(logout(uID) == -1);
+    assert(unregister(uID) == -1);
 
     assert(file_exists(pass_file) == 1);
     assert(file_exists(login_file) == 0);
 
+    assert(login(uID, password) == 0);
+
+    assert(file_exists(pass_file) == 1);
+    assert(file_exists(login_file) == 1);
+
+    assert(unregister(uID) == 0);
+
+    assert(file_exists(pass_file) == 0);
+    assert(file_exists(login_file) == 0);
+
+    assert(login(uID, password) == 1);
+
+    assert(file_exists(pass_file) == 1);
+    assert(file_exists(login_file) == 1);
+
+    assert(unregister(uID) == 0);
+
+    assert(file_exists(pass_file) == 0);
+    assert(file_exists(login_file) == 0);
+
     // Limpar o lixo produzido pelo teste
-    delete_file(pass_file);
     filesystem::remove("ASDIR/USERS/" + to_string(uID));
 }

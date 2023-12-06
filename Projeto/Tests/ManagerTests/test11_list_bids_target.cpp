@@ -3,7 +3,7 @@
 #include <iostream>
 #include <filesystem>
 #include <vector>
-#include "../AuctionManager.h"
+#include "../../AuctionManager.h"
 
 using namespace std;
 
@@ -30,7 +30,7 @@ int main() {
 
     assert(open_auction(uID + 1, "boas", 100, 30, asset_name, sizeof(fdata), fdata) == 1);
 
-    assert(bid(uID, 1, 1) == 0);
+    assert(bid(uID, 1, 120) == 0);
 
     list = list_bids_target(uID);
     assert(list.size() == 1);
@@ -44,7 +44,7 @@ int main() {
 
     assert(open_auction(uID, "segunda", 100, 30, asset_name, sizeof(fdata), fdata) == 2);
 
-    assert(bid(uID + 1, 2, 1) == 0);
+    assert(bid(uID + 1, 2, 150) == 0);
 
     list = list_bids_target(uID);
     assert(list.size() == 1);
@@ -52,7 +52,7 @@ int main() {
 
     assert(open_auction(uID + 1, "boas", 100, 30, asset_name, sizeof(fdata), fdata) == 3);
 
-    assert(bid(uID, 3, 1) == 0);
+    assert(bid(uID, 3, 200) == 0);
 
     list = list_bids_target(uID);
     assert(list.size() == 2);

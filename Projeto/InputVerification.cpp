@@ -120,6 +120,12 @@ bool is_unexpected_fsize(string fsize) {
         return true;
     }
 
+    for (char c : fsize) {
+        if (!isdigit(c)) {
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -336,4 +342,50 @@ bool is_unexpected_open_input(vector<string> arguments, bool is_from_client) {
     }
 
     return false;
+}
+
+// > -------------------- { Always False } -------------------- <
+
+bool is_unexpected_login_input(vector<string> arguments) {
+    return is_unexpected_login_input(arguments, false);
+}
+
+bool is_unexpected_logout_input(vector<string> arguments) {
+    return is_unexpected_logout_input(arguments, false);
+}
+
+bool is_unexpected_unregister_input(vector<string> arguments) {
+    return is_unexpected_unregister_input(arguments, false);
+}
+
+bool is_unexpected_list_auctions_target_input(vector<string> arguments) {
+    return is_unexpected_list_auctions_target_input(arguments, false);
+}
+
+bool is_unexpected_list_auctions_input(vector<string> arguments) {
+    return is_unexpected_list_auctions_input(arguments, false);
+}
+
+bool is_unexpected_list_bids_target_input(vector<string> arguments) {
+    return is_unexpected_list_bids_target_input(arguments, false);
+}
+
+bool is_unexpected_show_record_input(vector<string> arguments) {
+    return is_unexpected_show_record_input(arguments, false);
+}
+
+bool is_unexpected_close_input(vector<string> arguments) {
+    return is_unexpected_close_input(arguments, false);
+}
+
+bool is_unexpected_show_asset_input(vector<string> arguments) {
+    return is_unexpected_show_asset_input(arguments, false);
+}
+
+bool is_unexpected_bid_input(vector<string> arguments) {
+    return is_unexpected_bid_input(arguments, false);
+}
+
+bool is_unexpected_open_input(vector<string> arguments) {
+    return is_unexpected_open_input(arguments, false);
 }
