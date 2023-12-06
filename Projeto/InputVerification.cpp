@@ -6,7 +6,7 @@ using namespace std;
 #define PASSWORD_LENGTH 8
 
 // #------------------------------------------------------------------#
-// |                        Input Verification                        |
+// |                        Argument Verification                     |
 // #------------------------------------------------------------------#
 
 bool is_unexpected_uid(string uID_string) {
@@ -54,7 +54,7 @@ bool is_unexpected_password(string password) {
 }
 
 bool is_unexpected_value(string value) {
-    if (value.length() != 6)
+    if (!(value.length() >= 1 && value.length() <= 6))
         return true;
 
     for (char c : value) {
@@ -65,6 +65,66 @@ bool is_unexpected_value(string value) {
 
     return false;
 }
+
+bool is_unexpected_name(string name) {
+    if (!(name.length() >= 1 && name.length() <= 10))
+        return true;
+
+    for (char c : name) {
+        if (!isalnum(c)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool is_unexpected_timeactive(string time) {
+    if (!(time.length() >= 1 && time.length() <= 5))
+        return true;
+
+    for (char c : time) {
+        if (!isdigit(c)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool is_unexpected_fname(string fname) {
+    if (!(fname.length() >= 1 && fname.length() <= 24))
+        return true;
+
+    for (char c : fname) {
+        if (!isdigit(c) && c != '-' && c != '_' && c != '.') {
+            return true;
+        }
+    }
+
+    size_t dotPosition = fname.find_last_of('.');
+    if (dotPosition == string::npos) {
+        return true;
+    }
+
+    if (fname.length() - dotPosition != 4) {
+        return true;
+    }
+
+    return false;
+}
+
+bool is_unexpected_fsize(string fsize) {
+    if (!(fsize.length() >= 1 && fsize.length() <= 8)) {
+        return true;
+    }
+
+    return false;
+}
+
+// #------------------------------------------------------------------#
+// |                        Input Verification                        |
+// #------------------------------------------------------------------#
 
 bool is_unexpected_login_input(vector<string> arguments) {
     if (arguments.size() != 2) {
@@ -122,22 +182,32 @@ bool is_unexpected_show_record_input(vector<string> arguments) {
     return false;
 }
 
-bool is_unexpected_close_input(vector<string> arguments) {
-    if (arguments.size() != 3) {
-        return true;
-    }
+bool is_unexpected_close_input(vector<string> arguments, bool is_from_client) {
+    if (is_from_client) {
+        if (arguments.size() != 1) 
+            return true;
 
-    if (is_unexpected_uid(arguments[0])) {
-        return true;
-    }
+        if (is_unexpected_aid(arguments[0])) {
+            return true;
+        }
 
-    if (is_unexpected_password(arguments[1])) {
-        return true;
-    }
+    } else {
+        if (arguments.size() != 3) {
+            return true;
+        }
 
-    if (is_unexpected_aid(arguments[2])) {
-        return true;
-    }
+        if (is_unexpected_uid(arguments[0])) {
+            return true;
+        }
+
+        if (is_unexpected_password(arguments[1])) {
+            return true;
+        }
+
+        if (is_unexpected_aid(arguments[2])) {
+            return true;
+        }
+    } 
 
     return false;
 }
@@ -154,24 +224,94 @@ bool is_unexpected_show_asset_input(vector<string> arguments) {
     return false;
 }
 
-bool is_unexpected_bid_input(vector<string> arguments) {
-    if (arguments.size() != 4) {
+bool is_unexpected_bid_input(vector<string> arguments, bool is_from_client) {
+    if (is_from_client) {
+        if (arguments.size() != 2) 
+            return true;
+
+        if (is_unexpected_aid(arguments[0])) {
+            return true;
+        }
+
+        if (is_unexpected_value(arguments[1])) {
+            return true;
+        }
+
+    } else {
+        if (arguments.size() != 4) {
+            return true;
+        }
+
+        if (is_unexpected_uid(arguments[0])) {
+            return true;
+        }
+
+        if (is_unexpected_password(arguments[1])) {
+            return true;
+        }
+
+        if (is_unexpected_aid(arguments[2])) {
+            return true;
+        }
+
+        if (is_unexpected_value(arguments[3])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+bool is_unexpected_open_input(vector<string> arguments, bool is_from_client) {
+    string name, value, timeactive, fname;
+    if(bool is_from_client) {
+        if (arguments.size() != 4) {
+            return true;
+        }
+
+        name = arguments[0];
+        fname = arguments[1];
+        value = arguments[2];
+        timeactive = arguments[3]
+
+    } else {
+        //TODO tiago
+        if (arguments.size() != 8) {
+            return true;
+        }
+
+        if (is_unexpected_uid(arguments[0])) {
+            return true;
+        }
+
+        if (is_unexpected_password(arguments[1])) {
+            return true;
+        }
+
+        if (is_unexpected_fsize(arguments[6])) {
+            return true;
+        }
+
+        name = arguments[2];
+        value = arguments[3];
+        timeactive = arguments[4];
+        fname = arguments[5];
+    }
+
+    if (is_unexpected_name(name)) {
         return true;
     }
 
-    if (is_unexpected_uid(arguments[0])) {
+    if (is_unexpected_value(value)) {
         return true;
     }
 
-    if (is_unexpected_password(arguments[1])) {
+    if (is_unexpected_timeactive(timeactive)) {
         return true;
     }
 
-    if (is_unexpected_aid(arguments[2])) {
-        return true;
-    }
-
-    if (is_unexpected_value(arguments[3])) {
+    if (is_unexpected_fname(fname)) {
         return true;
     }
 
