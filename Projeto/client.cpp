@@ -380,11 +380,10 @@ string translateOutput(string message) {
             string print;
             for(int i = 2; i < output.size(); i ++) {
                 if (output[i] == "E")
-                    print += "\nEnded ";
+                    print += "\nEnded";
                 else if (output[i] == "B")
-                    print += "\nBid ";
+                    print += "\nBid";
                 else{
-                    cout << "entrei\n";
                     print += output[i];
                 }
                 if (i != output.size()-1)
