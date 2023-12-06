@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sys/stat.h>
 #include <fstream>
+#include "AuctionManager.h"
 
 #define PORT "58011"
 
@@ -30,6 +31,7 @@ string password;
 string temp_pass;
 string uid;
 bool logged_in = false;
+
 
 int read_from_file(const string& file_name, string& buffer) {
     ifstream file(file_name);

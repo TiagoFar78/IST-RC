@@ -9,17 +9,73 @@ using namespace std;
 // |                        Input Verification                        |
 // #------------------------------------------------------------------#
 
+bool is_unexpected_uid(string uID_string) {
+    if (uID_string.length() != 6)
+        return true;
+
+     for (char c : uID_string) {
+        if (!isdigit(c)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool is_unexpected_aid(string aID_string) {
+    if (aID_string.length() != 3)
+        return true;
+
+    for (char c : aID_string) {
+        if (!isdigit(c)) {
+            return true;
+        }
+    }
+
+    int aID_number = atoi(aID_string.c_str());
+    if (aID_number >= 1) { 
+        return true;
+    }
+
+    return false;
+}
+
+bool is_unexpected_password(string password) {
+    if (password.length() != 8)
+        return true;
+
+    for (char c : password) {
+        if (!isalnum(c)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool is_unexpected_value(string value) {
+    if (value.length() != 6)
+        return true;
+
+    for (char c : value) {
+        if (!isdigit(c)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool is_unexpected_login_input(vector<string> arguments) {
     if (arguments.size() != 2) {
         return true;
     }
 
-    int uID = atoi(arguments[0].c_str());
-    if (uID == 0 || uID > 999999 || uID < 100000) { // TODO Fazer isto com digit count quando houver paciencia
+    if (is_unexpected_uid(arguments[0])) {
         return true;
     }
 
-    if (arguments[1].length() != PASSWORD_LENGTH) {
+    if (is_unexpected_password(arguments[1])) {
         return true;
     }
 
@@ -39,8 +95,7 @@ bool is_unexpected_list_auctions_target_input(vector<string> arguments) {
         return true;
     }
 
-    int uID = atoi(arguments[0].c_str());
-    if (uID == 0 || uID > 999999 || uID < 100000) { // TODO Fazer isto com digit count quando houver paciencia
+    if (is_unexpected_uid(arguments[0])) {
         return true;
     }
 
@@ -53,4 +108,72 @@ bool is_unexpected_list_auctions_input(vector<string> arguments) {
 
 bool is_unexpected_list_bids_target_input(vector<string> arguments) {
     return is_unexpected_list_auctions_target_input(arguments);
+}
+
+bool is_unexpected_show_record_input(vector<string> arguments) {
+    if (arguments.size() != 1) {
+        return true;
+    }
+
+    if (is_unexpected_aid(arguments[0])) {
+        return true;
+    }
+
+    return false;
+}
+
+bool is_unexpected_close_input(vector<string> arguments) {
+    if (arguments.size() != 3) {
+        return true;
+    }
+
+    if (is_unexpected_uid(arguments[0])) {
+        return true;
+    }
+
+    if (is_unexpected_password(arguments[1])) {
+        return true;
+    }
+
+    if (is_unexpected_aid(arguments[2])) {
+        return true;
+    }
+
+    return false;
+}
+
+bool is_unexpected_show_asset_input(vector<string> arguments) {
+    if (arguments.size() != 1) {
+        return true;
+    }
+
+    if (is_unexpected_aid(arguments[0])) {
+        return true;
+    }
+
+    return false;
+}
+
+bool is_unexpected_bid_input(vector<string> arguments) {
+    if (arguments.size() != 4) {
+        return true;
+    }
+
+    if (is_unexpected_uid(arguments[0])) {
+        return true;
+    }
+
+    if (is_unexpected_password(arguments[1])) {
+        return true;
+    }
+
+    if (is_unexpected_aid(arguments[2])) {
+        return true;
+    }
+
+    if (is_unexpected_value(arguments[3])) {
+        return true;
+    }
+
+    return false;
 }
