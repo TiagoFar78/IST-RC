@@ -12,7 +12,7 @@
 #include <iostream>
 #include <sys/stat.h>
 #include <fstream>
-#include "AuctionManager.h"
+#include "InputVerification.h"
 
 #define PORT "58011"
 
@@ -138,60 +138,94 @@ vector<string> splitString(string input, char delimiter) {
     return result;
 }
 
-string translateInput(string command, string arguments) {
-    string translated_message;
-    string prefix;
+string translateInput(string command, vector<string> input) {
+
+    input.erase(input.begin());
+
+    string translated_message, prefix, arguments;
 
     if (command == "login") {
+        if (is_unexpected_login_input(input, true)) {
+            return "invalid";
+        }
         prefix = "LIN ";
+        arguments = input[0] + " " + input[1];
 
     } else if (command == "logout") {
+        if (is_unexpected_logout_input(input, true)) {
+            return "invalid";
+        }
         prefix = "LOU ";
-        arguments += uid + " " + password;
+        arguments = uid + " " + password;
 
     } else if (command == "unregister") {
+        if (is_unexpected_unregister_input(input, true)) {
+            return "invalid";
+        }
         prefix = "UNR ";
-        arguments += uid + " " + password;
+        arguments = uid + " " + password;
 
     } else if (command == "open") {
+        if (is_unexpected_open_input(input, true)) {
+            return "invalid";
+        }
         prefix = "OPA ";
-        vector<string> old_arguments = splitString(arguments, ' ');
-
         string fileContents;
         
         //TODO verificar se correu bem a ambas as funcoes
-        read_from_file(old_arguments[1], fileContents);
-        string fileSize = to_string(getFileSize(old_arguments[1]));
+        read_from_file(input[1], fileContents);
+        string fileSize = to_string(getFileSize(input[1]));
 
-        arguments = uid + " " + password + " " + old_arguments[0] + " " + old_arguments[2] + " " 
-                    + old_arguments[3] + " " + old_arguments[1] + " " + fileSize + " " + fileContents;
-
-        cout << "a mandar: " << fileContents << "\n";
+        arguments = uid + " " + password + " " + input[0] + " " + input[2] + " " 
+                    + input[3] + " " + input[1] + " " + fileSize + " " + fileContents;
         
     } else if (command == "close") {
+        if (is_unexpected_close_input(input, true)) {
+            return "invalid";
+        }
         prefix = "CLS ";
-        arguments = uid + " " + password + " " + arguments;
+        arguments = uid + " " + password + " " + input[0];
         
     } else if ((command == "myauctions") || (command == "ma")) {
+        if (is_unexpected_list_auctions_target_input(input, true)) {
+            return "invalid";
+        }
         prefix = "LMA ";
         arguments = uid;
 
     } else if ((command == "mybids") || (command == "mb")) {
+        if (is_unexpected_list_bids_target_input(input, true)) {
+            return "invalid";
+        }
         prefix = "LMB ";
         arguments = uid;
 
     } else if ((command == "list") || (command == "l")) {
+        if (is_unexpected_list_auctions_input(input, true)) {
+            return "invalid";
+        }
         prefix = "LST";
 
     }  else if ((command == "show_asset") || (command == "sa")) {
+        if (is_unexpected_show_asset_input(input, true)) {
+            return "invalid";
+        }
         prefix = "SAS ";
+        arguments = input[0];
 
     } else if ((command == "bid") || (command == "b")) {
+        if (is_unexpected_bid_input(input, true)) {
+            return "invalid";
+        }
         prefix = "BID ";
-        arguments = uid + " " + password + " " + arguments;
+        arguments = uid + " " + password + " " + input[0] + " " + input[1];
 
     }  else if ((command == "show_record") || (command == "sr")) {
+        if (is_unexpected_show_record_input(input, true)) {
+            return "invalid";
+        }
         prefix = "SRC ";
+        arguments = input[0];
     }
 
     translated_message = prefix + arguments + "\n"; 
@@ -457,7 +491,6 @@ void sendTCP(string message) {
     }
 
     n = read(tcp_socket, buffer, 10000);
-    cout << "buffer: " << buffer << "\n";
     if (n == -1) {
         printf("Erro nesta bomba - nao leu\n");
         exit(1);
@@ -488,64 +521,66 @@ int main() {
         vector<string> input = splitString(write_buffer, ' ');
         command = input[0];
 
-        for (size_t i = 1; i < input.size(); i++) {
-            arguments += input[i];
+        // for (size_t i = 1; i < input.size(); i++) {
+        //     arguments += input[i];
 
-            if (i != (input.size() - 1))
-                arguments += " ";
-        }
+        //     if (i != (input.size() - 1))
+        //         arguments += " ";
+        // }
 
-        translated_message = translateInput(command, arguments);
-       
+        translated_message = translateInput(command, input);
+        if (translated_message == "invalid")
+            cout << "invalid message format\n";
 
-        if (command == "login") {
-            if (logged_in) {
-                cout << "first execute the logout command\n";
+        else {
+            if (command == "login") {
+                if (logged_in) {
+                    cout << "first execute the logout command\n";
 
-            } else {
-                uid = input[1];
-                temp_pass = input[2];
-                sendUDP(translated_message);
-            }
-    
-        } else if ((command == "logout") || (command == "unregister") || (command == "myauctions") || (command == "ma") 
-                    || (command == "mybids") || (command == "mb")) { 
-            if(!logged_in) {
-               cout << "user not logged in\n";
-               
-            } else {
-                sendUDP(translated_message);
-            }
+                } else {
+                    uid = input[1];
+                    temp_pass = input[2];
+                    sendUDP(translated_message);
+                }
         
-        } else if ((command == "list") || (command == "l") || (command == "show_record") || (command == "sr")) {
-            sendUDP(translated_message);
+            } else if ((command == "logout") || (command == "unregister") || (command == "myauctions") || (command == "ma") 
+                        || (command == "mybids") || (command == "mb")) { 
+                if(!logged_in) {
+                cout << "user not logged in\n";
+                
+                } else {
+                    sendUDP(translated_message);
+                }
+            
+            } else if ((command == "list") || (command == "l") || (command == "show_record") || (command == "sr")) {
+                sendUDP(translated_message);
 
-        } else if ((command == "exit")) {
-            if (logged_in) {
-                cout << "first execute the logout command\n";
+            } else if ((command == "exit")) {
+                if (logged_in) {
+                    cout << "first execute the logout command\n";
 
-            } else {
-                break;
-            }
+                } else {
+                    break;
+                }
 
-        } else if (command == "open" || command == "close" || command == "bid" || command == "b" ) {
-            if(!logged_in) {
-               cout << "user not logged in\n";
-               
-            } else {
+            } else if (command == "open" || command == "close" || command == "bid" || command == "b" ) {
+                if(!logged_in) {
+                cout << "user not logged in\n";
+                
+                } else {
+                    createTCPSocket();
+                    sendTCP(translated_message);
+                    freeaddrinfo(tcp_res);
+                    close(tcp_socket);
+                }
+
+            } else if(command == "show_asset" || command == "sa") {
                 createTCPSocket();
                 sendTCP(translated_message);
                 freeaddrinfo(tcp_res);
                 close(tcp_socket);
             }
-
-        } else if(command == "show_asset" || command == "sa") {
-            createTCPSocket();
-            sendTCP(translated_message);
-            freeaddrinfo(tcp_res);
-            close(tcp_socket);
         }
-    
     }
 
     freeaddrinfo(udp_res);

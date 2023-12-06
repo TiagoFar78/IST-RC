@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <iostream>
 
 using namespace std;
 
@@ -33,7 +34,7 @@ bool is_unexpected_aid(string aID_string) {
     }
 
     int aID_number = atoi(aID_string.c_str());
-    if (aID_number >= 1) { 
+    if (aID_number < 1) { 
         return true;
     }
 
@@ -97,7 +98,7 @@ bool is_unexpected_fname(string fname) {
         return true;
 
     for (char c : fname) {
-        if (!isdigit(c) && c != '-' && c != '_' && c != '.') {
+        if (!isalnum(c) && c != '-' && c != '_' && c != '.') {
             return true;
         }
     }
@@ -107,7 +108,7 @@ bool is_unexpected_fname(string fname) {
         return true;
     }
 
-    if (fname.length() - dotPosition != 4) {
+    if ((fname.length() - dotPosition) != 4) {
         return true;
     }
 
@@ -126,7 +127,7 @@ bool is_unexpected_fsize(string fsize) {
 // |                        Input Verification                        |
 // #------------------------------------------------------------------#
 
-bool is_unexpected_login_input(vector<string> arguments) {
+bool is_unexpected_login_input(vector<string> arguments, bool is_from_client) {
     if (arguments.size() != 2) {
         return true;
     }
@@ -142,35 +143,54 @@ bool is_unexpected_login_input(vector<string> arguments) {
     return false;
 }
 
-bool is_unexpected_logout_input(vector<string> arguments) {
-    return is_unexpected_login_input(arguments); // Same parameters
-}
-
-bool is_unexpected_unregister_input(vector<string> arguments) {
-    return is_unexpected_login_input(arguments); // Same parameters
-}
-
-bool is_unexpected_list_auctions_target_input(vector<string> arguments) {
-    if (arguments.size() != 1) {
-        return true;
-    }
-
-    if (is_unexpected_uid(arguments[0])) {
-        return true;
+bool is_unexpected_logout_input(vector<string> arguments, bool is_from_client) {
+    if(is_from_client) {
+        if (arguments.size() != 0)
+            return true;
+    } else {
+        return is_unexpected_login_input(arguments, is_from_client); // Same parameters
     }
 
     return false;
 }
 
-bool is_unexpected_list_auctions_input(vector<string> arguments) {
+bool is_unexpected_unregister_input(vector<string> arguments, bool is_from_client) {
+    if(is_from_client) {
+        if (arguments.size() != 0)
+            return true;
+    } else {
+        return is_unexpected_login_input(arguments, is_from_client); // Same parameters
+    }
+
+    return false;
+}
+
+bool is_unexpected_list_auctions_target_input(vector<string> arguments, bool is_from_client) {
+    if(is_from_client) {
+        if (arguments.size() != 0)
+            return true;
+    } else {
+        if (arguments.size() != 1) {
+            return true;
+        }
+
+        if (is_unexpected_uid(arguments[0])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool is_unexpected_list_auctions_input(vector<string> arguments, bool is_from_client) {
     return arguments.size() != 0;
 }
 
-bool is_unexpected_list_bids_target_input(vector<string> arguments) {
-    return is_unexpected_list_auctions_target_input(arguments);
+bool is_unexpected_list_bids_target_input(vector<string> arguments, bool is_from_client) {
+    return is_unexpected_list_auctions_target_input(arguments, is_from_client);
 }
 
-bool is_unexpected_show_record_input(vector<string> arguments) {
+bool is_unexpected_show_record_input(vector<string> arguments, bool is_from_client) {
     if (arguments.size() != 1) {
         return true;
     }
@@ -184,7 +204,7 @@ bool is_unexpected_show_record_input(vector<string> arguments) {
 
 bool is_unexpected_close_input(vector<string> arguments, bool is_from_client) {
     if (is_from_client) {
-        if (arguments.size() != 1) 
+        if (arguments.size() != 1)  
             return true;
 
         if (is_unexpected_aid(arguments[0])) {
@@ -212,7 +232,7 @@ bool is_unexpected_close_input(vector<string> arguments, bool is_from_client) {
     return false;
 }
 
-bool is_unexpected_show_asset_input(vector<string> arguments) {
+bool is_unexpected_show_asset_input(vector<string> arguments, bool is_from_client) {
     if (arguments.size() != 1) {
         return true;
     }
