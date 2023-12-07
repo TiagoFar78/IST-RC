@@ -461,8 +461,8 @@ void createTCPSocket() {
 }
 
 void sendUDP(string message) {
-    char buffer[10000];
-    memset(buffer, 0, 10000);
+    char buffer[6000];
+    memset(buffer, 0, 6000);
     string translated_message;
 
     n = sendto(udp_socket, message.c_str(), message.length(), 0, udp_res->ai_addr, udp_res->ai_addrlen);
@@ -474,7 +474,7 @@ void sendUDP(string message) {
     udp_addrlen = sizeof(udp_addr);
 
     //como estou a endereçar mudar char buffer
-    n = recvfrom(udp_socket, buffer , 10000, 0, (struct sockaddr*)&udp_addr, &udp_addrlen);
+    n = recvfrom(udp_socket, buffer , 6000, 0, (struct sockaddr*)&udp_addr, &udp_addrlen);
     if (n == -1) {
         printf("Erro nesta bomba - nao escreveu\n");
         exit(1);
@@ -486,31 +486,36 @@ void sendUDP(string message) {
 }
 
 void sendTCP(string message) {
-    char buffer[10000];
-    memset(buffer, 0, 10000);
-    string translated_message;
-    string full_output;
+    char buffer[1024];
+    memset(buffer, 0, 1024);
+    string translated_message, full_output;
 
-    n = write(tcp_socket, message.c_str(), message.length());
-    if (n == -1) {
-        printf("Erro nesta bomba - nao escreveu\n");
-        exit(1);
+    size_t totalBytesSent = 0;
+
+    while (totalBytesSent < message.length()) {
+        ssize_t n = write(tcp_socket, message.c_str() + totalBytesSent, message.length() - totalBytesSent);
+
+        if (n == -1) {
+            printf("Erro nesta bomba - nao escreveu\n");
+            exit(1);
+        }
+
+        totalBytesSent += n;
     }
 
-    n = read(tcp_socket, buffer, 10000);
+    n = read(tcp_socket, buffer, 1024);
     string substring_buffer(buffer, buffer + n);
     full_output += substring_buffer;
-    memset(buffer, 0, 10000);
-
+    memset(buffer, 0, 1024);
     while(n != 0) {
-        n = read(tcp_socket, buffer, 10000);
+        n = read(tcp_socket, buffer, 1024);
         if (n == -1) {
             printf("Erro nesta bomba - nao leu\n");
             exit(1);
         }
         string substring_buffer(buffer, buffer + n);
         full_output += substring_buffer;
-        memset(buffer, 0, 10000);
+        memset(buffer, 0, 1024);
     }
 
     translated_message = translateOutput(full_output);
