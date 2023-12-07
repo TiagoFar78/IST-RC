@@ -20,7 +20,7 @@ using namespace std;
 // #-------------------------------------------------------------------#
 
 #define PORT "58028"
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 49
 
 string LOGIN_COMMAND = "LIN";
 string LOGOUT_COMMAND = "LOU";
@@ -453,6 +453,7 @@ string process_bid_attempt(vector<string> request_arguments) {
 // #------------------------------------------------------------------#
 
 int main() {
+    cout << "Abriu o server\n";
     struct addrinfo hints,*res; 
     struct sockaddr_in addr;
     char buffer[BUFFER_SIZE];
@@ -489,11 +490,10 @@ int main() {
             exit(1);
         }
 
-
         string command;
-        n = 1;
-        while (n != 0) {
-            cout << "vai ler" << endl;
+        n = BUFFER_SIZE;
+        while (n == BUFFER_SIZE) {
+            // Talvez seja preciso limpar o buffer aqui tambem
             n = read(newfd, buffer, BUFFER_SIZE);
             if (n == -1) {
                 printf("Erro nesta bomba - nao leu\n");
