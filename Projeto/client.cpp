@@ -15,6 +15,7 @@
 #include "InputVerification.h"
 
 #define PORT "58011"
+#define ADDRESS "tejo.tecnico.ulisboa.pt"
 
 using namespace std;
 
@@ -27,10 +28,10 @@ int tcp_errcode, tcp_socket;
 struct addrinfo tcp_hints,*tcp_res;
 
 ssize_t n;
-string password;
+string password;// = "password";
 string temp_pass;
-string uid;
-bool logged_in = false;
+string uid;// = "103327";
+bool logged_in = false;//= true;
 
 
 int read_from_file(const string& file_name, string& buffer) {
@@ -429,7 +430,7 @@ void createUDPSocket() {
     udp_hints.ai_family = AF_INET;
     udp_hints.ai_socktype = SOCK_DGRAM;
 
-    udp_errcode = getaddrinfo("tejo.tecnico.ulisboa.pt", PORT, &udp_hints, &udp_res);
+    udp_errcode = getaddrinfo(ADDRESS, PORT, &udp_hints, &udp_res);
     if (udp_errcode != 0) {
         printf("Erro nesta bomba - deu erro\n");
         exit(1);
@@ -447,7 +448,7 @@ void createTCPSocket() {
     tcp_hints.ai_family = AF_INET;
     tcp_hints.ai_socktype = SOCK_STREAM;
 
-    tcp_errcode = getaddrinfo("tejo.tecnico.ulisboa.pt", PORT, &tcp_hints, &tcp_res);
+    tcp_errcode = getaddrinfo(ADDRESS, PORT, &tcp_hints, &tcp_res);
     if (tcp_errcode != 0) {
         printf("Erro nesta bomba - deu erro\n");
         exit(1);

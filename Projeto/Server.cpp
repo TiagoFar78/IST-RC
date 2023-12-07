@@ -4,6 +4,15 @@
 #include "AuctionManager.h"
 #include "InputVerification.h"
 
+#include <unistd.h>
+#include <cstring>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+
 using namespace std;
 
 // #-------------------------------------------------------------------#
@@ -11,6 +20,7 @@ using namespace std;
 // #-------------------------------------------------------------------#
 
 #define PORT "58028"
+#define BUFFER_SIZE 1024
 
 string LOGIN_COMMAND = "LIN";
 string LOGOUT_COMMAND = "LOU";
@@ -21,6 +31,7 @@ string LIST_BIDS_TARGET_COMMAND = "LMB";
 string SHOW_RECORD_COMMAND = "SRC";
 string OPEN_COMMAND = "OPA";
 string CLOSE_COMMAND = "CLS";
+string SHOW_ASSET_COMMAND = "SAS";
 string BID_COMMAND = "BID";
 
 string LOGIN_REPLY = "RLI";
@@ -32,6 +43,7 @@ string LIST_BIDS_TARGET_REPLY = "RMB";
 string SHOW_RECORD_REPLY = "RRC";
 string OPEN_REPLY = "ROA";
 string CLOSE_REPLY = "RCL";
+string SHOW_ASSET_REPLY = "RSA";
 string BID_REPLY = "RBD";
 
 string OK_REPLY = "OK";
@@ -67,6 +79,7 @@ string process_list_bids_target(vector<string> request_arguments);
 string process_show_record(vector<string> request_arguments);
 string process_open_attempt(vector<string> request_arguments);
 string process_close_attempt(vector<string> request_arguments);
+string process_show_asset(vector<string> request_arguments);
 string process_bid_attempt(vector<string> request_arguments);
 
 // #------------------------------------------------------------------#
@@ -97,6 +110,10 @@ string process_bid_attempt(vector<string> request_arguments);
 // #-------------------------------------------------------------------#
 
 string process_request(string request) {
+    if (request.substr(0, 3) != OPEN_COMMAND) {
+        request.pop_back();
+    }
+
     return process_request(split_string(request, ' '));
 }
 
@@ -134,6 +151,9 @@ string process_request(vector<string> request_arguments) {
     }
     else if (command == CLOSE_COMMAND) {
         return CLOSE_REPLY + " " + process_close_attempt(request_arguments) + "\n";
+    }
+    else if (command == SHOW_ASSET_COMMAND) {
+        return SHOW_ASSET_REPLY + " " + process_show_asset(request_arguments); // It is supposed to dont have \n
     }
     else if (command == BID_COMMAND) {
         return BID_REPLY + " " + process_bid_attempt(request_arguments) + "\n";
@@ -348,8 +368,6 @@ string process_open_attempt(vector<string> request_arguments) {
         return NOT_LOGGED_IN_REPLY;
     }
 
-    // deposita o conteudo no ficheiro???
-
     return OK_REPLY + " " + to_string(return_code);
 }
 
@@ -381,6 +399,21 @@ string process_close_attempt(vector<string> request_arguments) {
     }
 
     return OK_REPLY;
+}
+
+string process_show_asset(vector<string> request_arguments) {
+    if (is_unexpected_show_asset_input(request_arguments)) {
+        return ERROR_REPLY;
+    }
+
+    int aID = atoi(request_arguments[0].c_str());
+
+    string return_code = show_asset(aID);
+    if (return_code.length() == 0) {
+        return NOT_OK_REPLY;
+    }
+
+    return OK_REPLY + " " + return_code;
 }
 
 string process_bid_attempt(vector<string> request_arguments) {
@@ -419,9 +452,75 @@ string process_bid_attempt(vector<string> request_arguments) {
 // |                           Server setup                           |
 // #------------------------------------------------------------------#
 
-/*int main() {
+int main() {
+    struct addrinfo hints,*res; 
+    struct sockaddr_in addr;
+    char buffer[BUFFER_SIZE];
+    memset(buffer, 0, BUFFER_SIZE);
 
-    // Ligar o servidor e ficar à escuta de cenas ig
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd==-1) {
+        exit(1);
+    }
+
+    memset(&hints, 0, sizeof(hints)); 
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    int errcode = getaddrinfo(NULL, PORT, &hints, &res);
+    if (errcode != 0) {
+        exit(1);
+    }
+
+    ssize_t n = bind(fd, res->ai_addr, res->ai_addrlen);
+    if (n == -1) {
+        exit(1);
+    }
+
+    if (listen(fd, 5) == -1) {
+        exit(1);
+    }
+
+    while (1) { 
+        socklen_t addrlen = sizeof(addr);
+        int newfd = accept(fd, (struct sockaddr*)&addr, &addrlen);
+        if (newfd == -1) {
+            exit(1);
+        }
+
+
+        string command;
+        n = 1;
+        while (n != 0) {
+            cout << "vai ler" << endl;
+            n = read(newfd, buffer, BUFFER_SIZE);
+            if (n == -1) {
+                printf("Erro nesta bomba - nao leu\n");
+                exit(1);
+            }
+
+            string substring_buffer(buffer, buffer + n);
+            command += substring_buffer;
+            memset(buffer, 0, BUFFER_SIZE);
+        }
+
+        cout << "received:" << command;
+
+        process_request("LIN 103327 password\n");
+
+        string reply = process_request(command);
+
+        n = write(newfd, reply.c_str(), reply.length()); 
+        if (n == -1) {
+            exit(1);
+        }
+
+        close(newfd);
+    }
+
+    freeaddrinfo(res);
+    close(fd);
 
     return 0;
-}*/
+}

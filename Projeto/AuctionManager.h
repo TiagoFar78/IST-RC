@@ -23,7 +23,7 @@ std::vector<std::vector<std::string>> get_auction_bids_details(int aID);
 std::vector<std::string> get_auction_end_details(int aID);
 int open_auction(int uID, const std::string& name, int startValue, int timeActive, const std::string& fileName, int fileSize, const std::string& fileData);
 int close(int uID, int aID);
-int show_asset(int aID);
+std::string show_asset(int aID);
 int bid(int uID, int aID, int value);
 int file_exists(const std::string& fileName);
 int create_file(const std::string& fileName);

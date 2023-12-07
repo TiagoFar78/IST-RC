@@ -18,67 +18,67 @@ int main() {
     string fdata = "dados";
     string asset_name = "banger.txt";
 
-    string reply = process_request("BID");
+    string reply = process_request("BID\n");
     assert(reply == "RBD ERR\n");
 
-    reply = process_request("BID 10");
+    reply = process_request("BID 10\n");
     assert(reply == "RBD ERR\n");
 
-    reply = process_request("BID 103327");
+    reply = process_request("BID 103327\n");
     assert(reply == "RBD ERR\n");
 
-    reply = process_request("BID 103327 password");
+    reply = process_request("BID 103327 password\n");
     assert(reply == "RBD ERR\n");
 
-    reply = process_request("BID 103327 password 10");
+    reply = process_request("BID 103327 password 10\n");
     assert(reply == "RBD ERR\n");
 
-    reply = process_request("BID 103327 password 001");
+    reply = process_request("BID 103327 password 001\n");
     assert(reply == "RBD ERR\n");
 
-    reply = process_request("BID " + uID_string + " password 001 20");
+    reply = process_request("BID " + uID_string + " password 001 20\n");
     assert(reply == "RBD NOK\n");
 
-    reply = process_request("LIN " + uID_string + " password");
+    reply = process_request("LIN " + uID_string + " password\n");
     assert(reply == "RLI REG\n");
 
-    reply = process_request("LOU " + uID_string + " password");
+    reply = process_request("LOU " + uID_string + " password\n");
     assert(reply == "RLO OK\n");
 
-    reply = process_request("BID " + uID_string + " password 001 20");
+    reply = process_request("BID " + uID_string + " password 001 20\n");
     assert(reply == "RBD NLG\n");
 
-    reply = process_request("LIN " + uID_string + " password");
+    reply = process_request("LIN " + uID_string + " password\n");
     assert(reply == "RLI OK\n");
 
-    reply = process_request("BID " + uID_string + " cenacena 001 20");
+    reply = process_request("BID " + uID_string + " cenacena 001 20\n");
     assert(reply == "RBD NOK\n");
 
-    reply = process_request("LIN " + to_string(uID + 1) + " password");
+    reply = process_request("LIN " + to_string(uID + 1) + " password\n");
     assert(reply == "RLI REG\n");
 
     // open auction
     assert(open_auction(uID + 1, "boas", 100, 1, asset_name, sizeof(fdata), fdata) == 1);
 
-    reply = process_request("BID " + to_string(uID + 1) + " password 001 90");
+    reply = process_request("BID " + to_string(uID + 1) + " password 001 90\n");
     assert(reply == "RBD REF\n");
 
-    reply = process_request("BID " + to_string(uID + 1) + " password 001 150");
+    reply = process_request("BID " + to_string(uID + 1) + " password 001 150\n");
     assert(reply == "RBD ILG\n");
 
-    reply = process_request("BID " + uID_string + " password 001 90");
+    reply = process_request("BID " + uID_string + " password 001 90\n");
     assert(reply == "RBD REF\n");
 
-    reply = process_request("BID " + uID_string + " password 001 150");
+    reply = process_request("BID " + uID_string + " password 001 150\n");
     assert(reply == "RBD ACC\n");
 
-    reply = process_request("BID " + uID_string + " password 001 150");
+    reply = process_request("BID " + uID_string + " password 001 150\n");
     assert(reply == "RBD REF\n");
 
-    reply = process_request("CLS " + to_string(uID + 1) + " password 001");
+    reply = process_request("CLS " + to_string(uID + 1) + " password 001\n");
     assert(reply == "RCL OK\n");
 
-    reply = process_request("BID " + uID_string + " password 001 200");
+    reply = process_request("BID " + uID_string + " password 001 200\n");
     assert(reply == "RBD NOK\n");
 
     // Limpar o lixo produzido pelo teste

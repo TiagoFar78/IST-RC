@@ -24,8 +24,9 @@ bool is_unexpected_uid(string uID_string) {
 }
 
 bool is_unexpected_aid(string aID_string) {
-    if (aID_string.length() != 3)
+    if (aID_string.length() != 3) {
         return true;
+    }
 
     for (char c : aID_string) {
         if (!isdigit(c)) {
@@ -34,7 +35,7 @@ bool is_unexpected_aid(string aID_string) {
     }
 
     int aID_number = atoi(aID_string.c_str());
-    if (aID_number < 1) { 
+    if (aID_number < 1) {
         return true;
     }
 
@@ -290,32 +291,19 @@ bool is_unexpected_bid_input(vector<string> arguments, bool is_from_client) {
 
 
 bool is_unexpected_open_input(vector<string> arguments, bool is_from_client) {
+    int arguments_required;
     string name, value, timeactive, fname;
-    if(is_from_client) {
-        if (arguments.size() != 4) {
-            return true;
-        }
-
+    if (is_from_client) {
+        arguments_required = 4;
         name = arguments[0];
         fname = arguments[1];
         value = arguments[2];
         timeactive = arguments[3];
 
     } else {
-        //TODO tiago
-        if (arguments.size() != 8) {
-            return true;
-        }
-
-        if (is_unexpected_uid(arguments[0])) {
-            return true;
-        }
-
-        if (is_unexpected_password(arguments[1])) {
-            return true;
-        }
-
-        if (is_unexpected_fsize(arguments[6])) {
+        arguments_required = 8;
+        if (arguments.size() < arguments_required || is_unexpected_uid(arguments[0]) ||
+                 is_unexpected_password(arguments[1]) || is_unexpected_fsize(arguments[6])) {
             return true;
         }
 
@@ -325,23 +313,8 @@ bool is_unexpected_open_input(vector<string> arguments, bool is_from_client) {
         fname = arguments[5];
     }
 
-    if (is_unexpected_name(name)) {
-        return true;
-    }
-
-    if (is_unexpected_value(value)) {
-        return true;
-    }
-
-    if (is_unexpected_timeactive(timeactive)) {
-        return true;
-    }
-
-    if (is_unexpected_fname(fname)) {
-        return true;
-    }
-
-    return false;
+    return is_unexpected_name(name) || is_unexpected_value(value) || is_unexpected_timeactive(timeactive) ||
+             is_unexpected_fname(fname);
 }
 
 // > -------------------- { Always False } -------------------- <

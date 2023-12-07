@@ -12,7 +12,7 @@ int main() {
     // |               Teste 17 - List Bids Target Command               |
     // #-----------------------------------------------------------------#
 
-    string reply = process_request("LMB");
+    string reply = process_request("LMB\n");
     assert(reply == "RMB ERR\n");
 
     int uID = 103327;
@@ -20,31 +20,31 @@ int main() {
     string fdata = "dados";
     string asset_name = "banger.txt";
 
-    reply = process_request("LMB 10000");
+    reply = process_request("LMB 10000\n");
     assert(reply == "RMB ERR\n");
 
-    reply = process_request("LMB 103327 passwor");
+    reply = process_request("LMB 103327 passwor\n");
     assert(reply == "RMB ERR\n");
 
-    reply = process_request("LMB 1000000");
+    reply = process_request("LMB 1000000\n");
     assert(reply == "RMB ERR\n");
 
-    reply = process_request("LMB " + uID_string);
+    reply = process_request("LMB " + uID_string + "\n");
     assert(reply == "RMB NLG\n");
 
-    reply = process_request("LIN " + uID_string + " password");
+    reply = process_request("LIN " + uID_string + " password\n");
     assert(reply == "RLI REG\n");
 
-    reply = process_request("LIN " + to_string(uID + 1) + " password");
+    reply = process_request("LIN " + to_string(uID + 1) + " password\n");
     assert(reply == "RLI REG\n");
 
-    reply = process_request("LMB " + uID_string);
+    reply = process_request("LMB " + uID_string + "\n");
     assert(reply == "RMB NOK\n");
 
     // open auction
     assert(open_auction(uID + 1, "boas", 100, 30, asset_name, sizeof(fdata), fdata) == 1);
 
-    reply = process_request("LMB " + uID_string);
+    reply = process_request("LMB " + uID_string + "\n");
     assert(reply == "RMB NOK\n");
 
     // open second auction
@@ -53,12 +53,12 @@ int main() {
     // bid on second auction
     assert(bid(uID, 2, 100) == 0);
 
-    reply = process_request("LMB " + uID_string);
+    reply = process_request("LMB " + uID_string + "\n");
     assert(reply == "RMB OK 002 1\n");
 
     sleep(2); // waits second auction finish
 
-    reply = process_request("LMB " + uID_string);
+    reply = process_request("LMB " + uID_string + "\n");
     assert(reply == "RMB OK 002 0\n");
 
     // Limpar o lixo produzido pelo teste

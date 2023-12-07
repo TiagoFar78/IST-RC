@@ -17,34 +17,34 @@ int main() {
     string fdata = "dados";
     string asset_name = "banger.txt";
 
-    string reply = process_request("SRC");
+    string reply = process_request("SRC\n");
     assert(reply == "RRC ERR\n");
 
-    reply = process_request("SRC 10");
+    reply = process_request("SRC 10\n");
     assert(reply == "RRC ERR\n");
 
-    reply = process_request("SRC 001 password");
+    reply = process_request("SRC 001 password\n");
     assert(reply == "RRC ERR\n");
 
-    reply = process_request("SRC 1000");
+    reply = process_request("SRC 1000\n");
     assert(reply == "RRC ERR\n");
 
-    reply = process_request("SRC 001");
+    reply = process_request("SRC 001\n");
     assert(reply == "RRC NOK\n");
 
-    reply = process_request("LIN " + uID_string + " password");
+    reply = process_request("LIN " + uID_string + " password\n");
     assert(reply == "RLI REG\n");
 
-    reply = process_request("LIN " + to_string(uID + 1) + " password");
+    reply = process_request("LIN " + to_string(uID + 1) + " password\n");
     assert(reply == "RLI REG\n");
 
-    reply = process_request("SRC 001");
+    reply = process_request("SRC 001\n");
     assert(reply == "RRC NOK\n");
 
     // open auction
     assert(open_auction(uID + 1, "boas", 100, 1, asset_name, sizeof(fdata), fdata) == 1);
 
-    reply = process_request("SRC 001");
+    reply = process_request("SRC 001\n");
     assert(reply.find("RRC OK " + to_string(uID + 1) + " boas " + asset_name + " 100 ") < reply.length());
     assert(reply.find(" B ") >= reply.length());
     assert(reply.find(" E ") >= reply.length());
@@ -52,7 +52,7 @@ int main() {
     // bid on auction
     assert(bid(uID, 1, 120) == 0);
 
-    reply = process_request("SRC 001");
+    reply = process_request("SRC 001\n");
     assert(reply.find("RRC OK " + to_string(uID + 1) + " boas " + asset_name + " 100 ") < reply.length());
     assert(reply.find(" B " + uID_string + " 120 ") < reply.length());
     assert(reply.find(" E ") >= reply.length());
@@ -60,7 +60,7 @@ int main() {
     // bid on auction
     assert(bid(uID, 1, 150) == 0);
 
-    reply = process_request("SRC 001");
+    reply = process_request("SRC 001\n");
     assert(reply.find("RRC OK " + to_string(uID + 1) + " boas " + asset_name + " 100 ") < reply.length());
     assert(reply.find(" B " + uID_string + " 120 ") < reply.length());
     assert(reply.find(" B " + uID_string + " 150 ") < reply.length());
@@ -68,7 +68,7 @@ int main() {
 
     sleep(2); // waits auction finish
 
-    reply = process_request("SRC 001");
+    reply = process_request("SRC 001\n");
     assert(reply.find("RRC OK " + to_string(uID + 1) + " boas " + asset_name + " 100 ") < reply.length());
     assert(reply.find(" B " + uID_string + " 120 ") < reply.length());
     assert(reply.find(" B " + uID_string + " 150 ") < reply.length());

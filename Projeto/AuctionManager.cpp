@@ -69,7 +69,6 @@ int count_folder_entries(string folder_path) {
     return scandir(folder_path.c_str(), &trash, 0, alphasort) - 2; // -2 porque conta com o . e ..
 }
 
-
 // > ---------------------- { File Functions } ---------------------- <
 
 int file_exists(const string& file_name) {
@@ -143,6 +142,15 @@ int read_from_file(const string& file_name, string& buffer) {
     return -1;
 }
 
+size_t get_file_size(const string& file_name) {
+    struct stat file_stat;
+
+    if (stat(file_name.c_str(), &file_stat) == 0) {
+        return static_cast<size_t>(file_stat.st_size);
+    } else {
+        return 0; 
+    }
+}
 
 // > ----------------------- { User Session } ----------------------- <
 
@@ -465,11 +473,28 @@ vector<string> get_auction_end_details(int aID) {
 
 /*
  * Return:
- * {0, cena} - successfully
- * {-1, null} - no file (or other problem)
+ * Fname Fsize Fdata - successfully
+ * "" - no file (or other problem)
  */
-int show_asset(int aID) {
-    return 0;
+string show_asset(int aID) {
+    string aID_string = add_zeros_before(3, aID);
+
+    string file_start_name = "ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt";
+    if (!file_exists(file_start_name)) {
+        string empty_string;
+        return empty_string;
+    }
+
+    string start_file_contents;
+    read_from_file(file_start_name, start_file_contents);
+
+    string asset_name = split_string(start_file_contents, ' ')[2];
+    size_t asset_size = get_file_size("ASDIR/AUCTIONS/" + aID_string + "/" + asset_name);
+
+    string asset_contents;
+    read_from_file("ASDIR/AUCTIONS/" + aID_string + "/" + asset_name, asset_contents);
+
+    return asset_name + " " + to_string(asset_size) + " " + asset_contents;
 }
 
 
