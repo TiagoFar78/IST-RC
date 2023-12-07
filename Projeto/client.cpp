@@ -405,6 +405,7 @@ string translateOutput(string message) {
                     content += " ";
                 }
             }
+
             create_file(output[2]);
             write_on_file(output[2], content, true);
             return output[2] + " " + output[3] + "\n";
@@ -488,6 +489,7 @@ void sendTCP(string message) {
     char buffer[10000];
     memset(buffer, 0, 10000);
     string translated_message;
+    string full_output;
 
     n = write(tcp_socket, message.c_str(), message.length());
     if (n == -1) {
@@ -496,13 +498,22 @@ void sendTCP(string message) {
     }
 
     n = read(tcp_socket, buffer, 10000);
-    if (n == -1) {
-        printf("Erro nesta bomba - nao leu\n");
-        exit(1);
+    string substring_buffer(buffer, buffer + n);
+    full_output += substring_buffer;
+    memset(buffer, 0, 10000);
+
+    while(n != 0) {
+        n = read(tcp_socket, buffer, 10000);
+        if (n == -1) {
+            printf("Erro nesta bomba - nao leu\n");
+            exit(1);
+        }
+        string substring_buffer(buffer, buffer + n);
+        full_output += substring_buffer;
+        memset(buffer, 0, 10000);
     }
 
-    string substring_buffer(buffer, buffer + n);
-    translated_message = translateOutput(substring_buffer);
+    translated_message = translateOutput(full_output);
     cout << translated_message;
 }
 
