@@ -190,7 +190,7 @@ bool is_unexpected_time(string time) {
 }
 
 // #------------------------------------------------------------------#
-// |                        Input Verification                        |
+// |                    Server Side - Client Input                    |
 // #------------------------------------------------------------------#
 
 bool is_unexpected_login_input(vector<string> arguments, bool is_from_client) {
@@ -266,6 +266,33 @@ bool is_unexpected_show_record_input(vector<string> arguments, bool is_from_clie
     }
 
     return false;
+}
+
+bool is_unexpected_open_input(vector<string> arguments, bool is_from_client) {
+    int arguments_required;
+    string name, value, timeactive, fname;
+    if (is_from_client) {
+        arguments_required = 4;
+        name = arguments[0];
+        fname = arguments[1];
+        value = arguments[2];
+        timeactive = arguments[3];
+
+    } else {
+        arguments_required = 8;
+        if (arguments.size() < arguments_required || is_unexpected_uid(arguments[0]) ||
+                 is_unexpected_password(arguments[1]) || is_unexpected_fsize(arguments[6])) {
+            return true;
+        }
+
+        name = arguments[2];
+        value = arguments[3];
+        timeactive = arguments[4];
+        fname = arguments[5];
+    }
+
+    return is_unexpected_name(name) || is_unexpected_value(value) || is_unexpected_timeactive(timeactive) ||
+             is_unexpected_fname(fname);
 }
 
 bool is_unexpected_close_input(vector<string> arguments, bool is_from_client) {
@@ -348,33 +375,6 @@ bool is_unexpected_bid_input(vector<string> arguments, bool is_from_client) {
     return false;
 }
 
-bool is_unexpected_open_input(vector<string> arguments, bool is_from_client) {
-    int arguments_required;
-    string name, value, timeactive, fname;
-    if (is_from_client) {
-        arguments_required = 4;
-        name = arguments[0];
-        fname = arguments[1];
-        value = arguments[2];
-        timeactive = arguments[3];
-
-    } else {
-        arguments_required = 8;
-        if (arguments.size() < arguments_required || is_unexpected_uid(arguments[0]) ||
-                 is_unexpected_password(arguments[1]) || is_unexpected_fsize(arguments[6])) {
-            return true;
-        }
-
-        name = arguments[2];
-        value = arguments[3];
-        timeactive = arguments[4];
-        fname = arguments[5];
-    }
-
-    return is_unexpected_name(name) || is_unexpected_value(value) || is_unexpected_timeactive(timeactive) ||
-             is_unexpected_fname(fname);
-}
-
 // > -------------------- { Always False } -------------------- <
 
 bool is_unexpected_login_input(vector<string> arguments) {
@@ -422,7 +422,7 @@ bool is_unexpected_open_input(vector<string> arguments) {
 }
 
 // #------------------------------------------------------------------#
-// |                        Server Verification                       |
+// |                    Client Side - Server Output                   |
 // #------------------------------------------------------------------#
 
 bool is_unexpected_login_output(vector<string> arguments, string status) {

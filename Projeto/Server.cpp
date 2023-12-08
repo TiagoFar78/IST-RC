@@ -2,7 +2,7 @@
 #include <vector>
 #include <iostream>
 #include "AuctionManager.h"
-#include "InputVerification.h"
+#include "ArgumentVerification.h"
 
 #include <unistd.h>
 #include <cstring>
@@ -20,7 +20,8 @@ using namespace std;
 // #-------------------------------------------------------------------#
 
 #define PORT "58028"
-#define BUFFER_SIZE 49
+#define BUFFER_SIZE 2048
+#define COMMAND_BUFFER_SIZE 3
 
 string LOGIN_COMMAND = "LIN";
 string LOGOUT_COMMAND = "LOU";
@@ -110,10 +111,11 @@ string process_bid_attempt(vector<string> request_arguments);
 // #-------------------------------------------------------------------#
 
 string process_request(string request) {
-    if (request.substr(0, 3) != OPEN_COMMAND) {
-        request.pop_back();
+    if (true) {
+        // fazer verificações da mensagem em si
     }
 
+    request.pop_back(); // Removes last \n
     return process_request(split_string(request, ' '));
 }
 
@@ -153,7 +155,7 @@ string process_request(vector<string> request_arguments) {
         return CLOSE_REPLY + " " + process_close_attempt(request_arguments) + "\n";
     }
     else if (command == SHOW_ASSET_COMMAND) {
-        return SHOW_ASSET_REPLY + " " + process_show_asset(request_arguments); // It is supposed to dont have \n
+        return SHOW_ASSET_REPLY + " " + process_show_asset(request_arguments) + "\n";
     }
     else if (command == BID_COMMAND) {
         return BID_REPLY + " " + process_bid_attempt(request_arguments) + "\n";
@@ -354,7 +356,11 @@ string process_open_attempt(vector<string> request_arguments) {
     int time_active = atoi(request_arguments[4].c_str());
     string file_name = request_arguments[5];
     int file_size = atoi(request_arguments[6].c_str());
-    string file_data = request_arguments[7];
+    string file_data = "";
+    for (int i = 7; i < request_arguments.size(); i++) {
+        file_data += request_arguments[i] + " ";
+    }
+    file_data.pop_back(); // Removes last space
 
     if (!is_password_correct(uID, password)) {
         return NOT_OK_REPLY;
@@ -456,8 +462,11 @@ int main() {
     cout << "Abriu o server\n";
     struct addrinfo hints,*res; 
     struct sockaddr_in addr;
-    char buffer[BUFFER_SIZE];
-    memset(buffer, 0, BUFFER_SIZE);
+
+    char buffer[BUFFER_SIZE + 1];
+    memset(buffer, 0, BUFFER_SIZE + 1);
+    char command_buffer[COMMAND_BUFFER_SIZE + 1];
+    memset(command_buffer, 0, COMMAND_BUFFER_SIZE + 1);
 
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd==-1) {
@@ -490,24 +499,67 @@ int main() {
             exit(1);
         }
 
-        string command;
-        n = BUFFER_SIZE;
-        while (n == BUFFER_SIZE) {
-            // Talvez seja preciso limpar o buffer aqui tambem
-            n = read(newfd, buffer, BUFFER_SIZE);
-            if (n == -1) {
-                printf("Erro nesta bomba - nao leu\n");
-                exit(1);
-            }
+        memset(command_buffer, 0, COMMAND_BUFFER_SIZE);
+        read(newfd, command_buffer, COMMAND_BUFFER_SIZE);
 
-            string substring_buffer(buffer, buffer + n);
-            command += substring_buffer;
-            memset(buffer, 0, BUFFER_SIZE);
+        string command;
+        command += command_buffer;
+        
+        n = BUFFER_SIZE;
+        if (command == OPEN_COMMAND) {
+            int file_size_index = 7;
+            int total_data = 0;
+            int accumulated_read = -1;
+            bool found_size = false;
+            while (total_data > accumulated_read) {
+                memset(buffer, 0, BUFFER_SIZE);
+                n = read(newfd, buffer, BUFFER_SIZE);
+                if (n == -1) {
+                    printf("Erro nesta bomba - nao leu\n");
+                    exit(1);
+                }
+
+                string substring_buffer(buffer, buffer + n);
+                command += substring_buffer;
+
+                if (found_size) {
+                    accumulated_read += n;
+                }
+                else {
+                    found_size = true;
+                    vector<string> command_arguments = split_string(command, ' ');
+                    if (command_arguments.size() >= file_size_index + 1) {
+                        int file_size = atoi(command_arguments[file_size_index].c_str());
+                        if (file_size == 0) {
+                            break;
+                        }
+
+                        int non_data_arguments_length = 0;
+                        for (int i = 0; i < file_size_index + 1; i++) {
+                            non_data_arguments_length += command_arguments[i].length() + 1;
+                        }
+
+                        accumulated_read = command.length() - non_data_arguments_length;
+                        total_data = file_size;
+                    }
+                }
+            }
+        }
+        else {
+            while (n == BUFFER_SIZE) {
+                memset(buffer, 0, BUFFER_SIZE);
+                n = read(newfd, buffer, BUFFER_SIZE);
+                if (n == -1) {
+                    printf("Erro nesta bomba - nao leu\n");
+                    exit(1);
+                }
+
+                string substring_buffer(buffer, buffer + n);
+                command += substring_buffer;
+            }
         }
 
-        cout << "received:" << command;
-
-        process_request("LIN 103327 password\n");
+        //process_request("LIN 103327 password\n");
 
         string reply = process_request(command);
 

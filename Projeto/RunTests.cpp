@@ -73,7 +73,7 @@ int main() {
 
         string test_file_without_extension = test_file.substr(0, test_file.length() - 4);
 
-        string compile_command = "g++ -std=c++17 AuctionManager.cpp Server.cpp InputVerification.cpp " + test_file + " -o " + test_file_without_extension;
+        string compile_command = "g++ -std=c++17 AuctionManager.cpp Server.cpp ArgumentVerification.cpp " + test_file + " -o " + test_file_without_extension;
         system(compile_command.c_str());
 
         string run_command = test_file_without_extension;
