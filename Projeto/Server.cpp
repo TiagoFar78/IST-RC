@@ -22,6 +22,7 @@ using namespace std;
 #define PORT "58028"
 #define BUFFER_SIZE 2048
 #define COMMAND_BUFFER_SIZE 3
+#define UDP_BUFFER_SIZE 6000
 
 string LOGIN_COMMAND = "LIN";
 string LOGOUT_COMMAND = "LOU";
@@ -458,12 +459,52 @@ string process_bid_attempt(vector<string> request_arguments) {
 // |                           Server setup                           |
 // #------------------------------------------------------------------#
 
-void tcp_setup() {
+// >---------------------------{ TCP }---------------------------<
+
+struct addrinfo *tcp_res;
+
+int tcp_setup() {
+    struct addrinfo hints;
+
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1) {
+        exit(1);
+    }
+
+    memset(&hints, 0, sizeof(hints)); 
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    int errcode = getaddrinfo(NULL, PORT, &hints, &tcp_res);
+    if (errcode != 0) {
+        exit(1);
+    }
+
+    ssize_t n = bind(fd, tcp_res->ai_addr, tcp_res->ai_addrlen);
+    if (n == -1) {
+        exit(1);
+    }
+
+    if (listen(fd, 5) == -1) {
+        exit(1);
+    }
+
+    return fd;
+}
+
+void execute_tcp(int fd) {
+    struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
     int newfd = accept(fd, (struct sockaddr*)&addr, &addrlen);
     if (newfd == -1) {
         exit(1);
     }
+
+    char buffer[BUFFER_SIZE + 1];
+    memset(buffer, 0, BUFFER_SIZE + 1);
+    char command_buffer[COMMAND_BUFFER_SIZE + 1];
+    memset(command_buffer, 0, COMMAND_BUFFER_SIZE + 1);
 
     memset(command_buffer, 0, COMMAND_BUFFER_SIZE);
     read(newfd, command_buffer, COMMAND_BUFFER_SIZE);
@@ -471,7 +512,7 @@ void tcp_setup() {
     string command;
     command += command_buffer;
     
-    n = BUFFER_SIZE;
+    ssize_t n = BUFFER_SIZE;
     if (command == OPEN_COMMAND) {
         int file_size_index = 7;
         int total_data = 0;
@@ -535,12 +576,51 @@ void tcp_setup() {
     }
 
     close(newfd);
-    freeaddrinfo(res);
-    close(fd);
 }
 
-void udp_setup() {
+// >---------------------------{ UDP }---------------------------<
 
+struct addrinfo *udp_res;
+
+int udp_setup() {
+    struct addrinfo hints; 
+
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd == -1) {
+        exit(1);
+    }
+
+    memset(&hints,0,sizeof(hints));
+    hints.ai_family=AF_INET;
+    hints.ai_socktype=SOCK_DGRAM;
+    hints.ai_flags=AI_PASSIVE;
+
+    int errcode = getaddrinfo(NULL, PORT, &hints, &udp_res);
+    if (errcode != 0) {
+        exit(1);
+    }
+
+    ssize_t n = bind(fd, udp_res->ai_addr, udp_res->ai_addrlen);
+    if (n == -1) {
+        exit(1);
+    }
+
+    return fd;
+}
+
+void execute_udp(int fd) {
+    struct sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+    
+    char buffer[UDP_BUFFER_SIZE + 1];
+    memset(buffer, 0, UDP_BUFFER_SIZE + 1);
+
+    ssize_t n = recvfrom(fd, buffer, UDP_BUFFER_SIZE, 0, (struct sockaddr *)&addr, &addrlen);
+
+    string buffer_string(buffer, buffer + n);
+    string reply = process_request(buffer_string);
+
+    n = sendto(fd, reply.c_str(), reply.length(), 0, udp_res->ai_addr, udp_res->ai_addrlen);
 }
 
 int main() {
@@ -550,75 +630,22 @@ int main() {
     int out_fds;
     struct timeval timeout;
 
-    struct addrinfo tcp_hints,*tcp_res; 
-    struct sockaddr_in tcp_addr;
-
-    struct addrinfo udp_hints,*udp_res; 
-    struct sockaddr_in udp_addr;
-
-    char buffer[BUFFER_SIZE + 1];
-    memset(buffer, 0, BUFFER_SIZE + 1);
-    char command_buffer[COMMAND_BUFFER_SIZE + 1];
-    memset(command_buffer, 0, COMMAND_BUFFER_SIZE + 1);
-
-    int tcp_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (tcp_fd==-1) {
-        exit(1);
-    }
-
-    int udp_fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (udp_fd==-1) {
-        exit(1);
-    }
-
-    memset(&tcp_hints, 0, sizeof(tcp_hints)); 
-    tcp_hints.ai_family = AF_INET;
-    tcp_hints.ai_socktype = SOCK_STREAM;
-    tcp_hints.ai_flags = AI_PASSIVE;
-
-    memset(&udp_hints,0,sizeof(udp_hints));
-    udp_hints.ai_family=AF_INET;
-    udp_hints.ai_socktype=SOCK_DGRAM;
-    udp_hints.ai_flags=AI_PASSIVE;
-
-    int tcp_errcode = getaddrinfo(NULL, PORT, &tcp_hints, &tcp_res);
-    if (tcp_errcode != 0) {
-        exit(1);
-    }
-
-    int udp_errcode = getaddrinfo(NULL, PORT, &tcp_hints, &tcp_res);
-    if (udp_errcode != 0) {
-        exit(1);
-    }
-
-    ssize_t n = bind(tcp_fd, tcp_res->ai_addr, tcp_res->ai_addrlen);
-    if (n == -1) {
-        exit(1);
-    }
-
-    n = bind(udp_fd, udp_res->ai_addr, udp_res->ai_addrlen);
-    if (n == -1) {
-        exit(1);
-    }
-
-    if (listen(tcp_fd, 5) == -1) {
-        exit(1);
-    }
+    int tcp_fd = tcp_setup();
+    int udp_fd = udp_setup();
 
     FD_ZERO(&inputs); 
-    FD_SET(0,&inputs); 
-    FD_SET(tcp_fd,&inputs); 
+    FD_SET(udp_fd, &inputs); 
+    FD_SET(tcp_fd, &inputs); 
 
-    while (1) { 
-        testfds=inputs;
+    while (true) { 
+        testfds = inputs;
 
-        memset((void *)&timeout,0,sizeof(timeout));
+        memset((void *)&timeout, 0, sizeof(timeout));
         timeout.tv_sec=10;
 
-        out_fds=select(FD_SETSIZE,&testfds,(fd_set *)NULL,(fd_set *)NULL,(struct timeval *) &timeout);
+        out_fds = select(FD_SETSIZE, &testfds, (fd_set *)NULL, (fd_set *)NULL, (struct timeval *) &timeout);
 
-        switch(out_fds)
-        {
+        switch (out_fds) {
             case 0:
                 printf("\n ---------------Timeout event-----------------\n");
                 break;
@@ -626,35 +653,33 @@ int main() {
                 perror("select");
                 exit(1);
             default:
-                // TODO UDP
-                if(FD_ISSET(udp_fd,&testfds))
-                {
+                if (FD_ISSET(udp_fd, &testfds)) {
                     pid_t pid = fork();
                     if (pid == -1) {
                         perror("fork");
                         exit(1);
                     } else if (pid == 0) {
-                        udp_setup(udp_fd);
+                        execute_udp(udp_fd);
                         exit(0);
                     }
                 }
-                if(FD_ISSET(tcp_fd,&testfds))
-                { 
+                else if (FD_ISSET(tcp_fd, &testfds)) { 
                     pid_t pid = fork();
                     if (pid == -1) {
                         perror("fork");
                         exit(1);
                     } else if (pid == 0) {
-                        tcp_setup(tcp_fd);
+                        execute_tcp(tcp_fd);
                         exit(0);
                     }
                 }
         }
-
-        
     }
 
-    
+    freeaddrinfo(tcp_res);
+    close(tcp_fd);
+    freeaddrinfo(udp_res);
+    close(udp_fd);
 
     return 0;
 }
