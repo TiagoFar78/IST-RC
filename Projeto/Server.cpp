@@ -458,121 +458,203 @@ string process_bid_attempt(vector<string> request_arguments) {
 // |                           Server setup                           |
 // #------------------------------------------------------------------#
 
+void tcp_setup() {
+    socklen_t addrlen = sizeof(addr);
+    int newfd = accept(fd, (struct sockaddr*)&addr, &addrlen);
+    if (newfd == -1) {
+        exit(1);
+    }
+
+    memset(command_buffer, 0, COMMAND_BUFFER_SIZE);
+    read(newfd, command_buffer, COMMAND_BUFFER_SIZE);
+
+    string command;
+    command += command_buffer;
+    
+    n = BUFFER_SIZE;
+    if (command == OPEN_COMMAND) {
+        int file_size_index = 7;
+        int total_data = 0;
+        int accumulated_read = -1;
+        bool found_size = false;
+        while (total_data > accumulated_read) {
+            memset(buffer, 0, BUFFER_SIZE);
+            n = read(newfd, buffer, BUFFER_SIZE);
+            if (n == -1) {
+                printf("Erro nesta bomba - nao leu\n");
+                exit(1);
+            }
+
+            string substring_buffer(buffer, buffer + n);
+            command += substring_buffer;
+
+            if (found_size) {
+                accumulated_read += n;
+            }
+            else {
+                found_size = true;
+                vector<string> command_arguments = split_string(command, ' ');
+                if (command_arguments.size() >= file_size_index + 1) {
+                    int file_size = atoi(command_arguments[file_size_index].c_str());
+                    if (file_size == 0) {
+                        break;
+                    }
+
+                    int non_data_arguments_length = 0;
+                    for (int i = 0; i < file_size_index + 1; i++) {
+                        non_data_arguments_length += command_arguments[i].length() + 1;
+                    }
+
+                    accumulated_read = command.length() - non_data_arguments_length;
+                    total_data = file_size;
+                }
+            }
+        }
+    }
+    else {
+        while (n == BUFFER_SIZE) {
+            memset(buffer, 0, BUFFER_SIZE);
+            n = read(newfd, buffer, BUFFER_SIZE);
+            if (n == -1) {
+                printf("Erro nesta bomba - nao leu\n");
+                exit(1);
+            }
+
+            string substring_buffer(buffer, buffer + n);
+            command += substring_buffer;
+        }
+    }
+
+    //process_request("LIN 103327 password\n");
+
+    string reply = process_request(command);
+
+    n = write(newfd, reply.c_str(), reply.length()); 
+    if (n == -1) {
+        exit(1);
+    }
+
+    close(newfd);
+    freeaddrinfo(res);
+    close(fd);
+}
+
+void udp_setup() {
+
+}
+
 int main() {
     cout << "Abriu o server\n";
-    struct addrinfo hints,*res; 
-    struct sockaddr_in addr;
+
+    fd_set inputs, testfds;
+    int out_fds;
+    struct timeval timeout;
+
+    struct addrinfo tcp_hints,*tcp_res; 
+    struct sockaddr_in tcp_addr;
+
+    struct addrinfo udp_hints,*udp_res; 
+    struct sockaddr_in udp_addr;
 
     char buffer[BUFFER_SIZE + 1];
     memset(buffer, 0, BUFFER_SIZE + 1);
     char command_buffer[COMMAND_BUFFER_SIZE + 1];
     memset(command_buffer, 0, COMMAND_BUFFER_SIZE + 1);
 
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd==-1) {
+    int tcp_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (tcp_fd==-1) {
         exit(1);
     }
 
-    memset(&hints, 0, sizeof(hints)); 
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE;
-
-    int errcode = getaddrinfo(NULL, PORT, &hints, &res);
-    if (errcode != 0) {
+    int udp_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (udp_fd==-1) {
         exit(1);
     }
 
-    ssize_t n = bind(fd, res->ai_addr, res->ai_addrlen);
+    memset(&tcp_hints, 0, sizeof(tcp_hints)); 
+    tcp_hints.ai_family = AF_INET;
+    tcp_hints.ai_socktype = SOCK_STREAM;
+    tcp_hints.ai_flags = AI_PASSIVE;
+
+    memset(&udp_hints,0,sizeof(udp_hints));
+    udp_hints.ai_family=AF_INET;
+    udp_hints.ai_socktype=SOCK_DGRAM;
+    udp_hints.ai_flags=AI_PASSIVE;
+
+    int tcp_errcode = getaddrinfo(NULL, PORT, &tcp_hints, &tcp_res);
+    if (tcp_errcode != 0) {
+        exit(1);
+    }
+
+    int udp_errcode = getaddrinfo(NULL, PORT, &tcp_hints, &tcp_res);
+    if (udp_errcode != 0) {
+        exit(1);
+    }
+
+    ssize_t n = bind(tcp_fd, tcp_res->ai_addr, tcp_res->ai_addrlen);
     if (n == -1) {
         exit(1);
     }
 
-    if (listen(fd, 5) == -1) {
+    n = bind(udp_fd, udp_res->ai_addr, udp_res->ai_addrlen);
+    if (n == -1) {
         exit(1);
     }
 
-    while (1) { 
-        socklen_t addrlen = sizeof(addr);
-        int newfd = accept(fd, (struct sockaddr*)&addr, &addrlen);
-        if (newfd == -1) {
-            exit(1);
-        }
-
-        memset(command_buffer, 0, COMMAND_BUFFER_SIZE);
-        read(newfd, command_buffer, COMMAND_BUFFER_SIZE);
-
-        string command;
-        command += command_buffer;
-        
-        n = BUFFER_SIZE;
-        if (command == OPEN_COMMAND) {
-            int file_size_index = 7;
-            int total_data = 0;
-            int accumulated_read = -1;
-            bool found_size = false;
-            while (total_data > accumulated_read) {
-                memset(buffer, 0, BUFFER_SIZE);
-                n = read(newfd, buffer, BUFFER_SIZE);
-                if (n == -1) {
-                    printf("Erro nesta bomba - nao leu\n");
-                    exit(1);
-                }
-
-                string substring_buffer(buffer, buffer + n);
-                command += substring_buffer;
-
-                if (found_size) {
-                    accumulated_read += n;
-                }
-                else {
-                    found_size = true;
-                    vector<string> command_arguments = split_string(command, ' ');
-                    if (command_arguments.size() >= file_size_index + 1) {
-                        int file_size = atoi(command_arguments[file_size_index].c_str());
-                        if (file_size == 0) {
-                            break;
-                        }
-
-                        int non_data_arguments_length = 0;
-                        for (int i = 0; i < file_size_index + 1; i++) {
-                            non_data_arguments_length += command_arguments[i].length() + 1;
-                        }
-
-                        accumulated_read = command.length() - non_data_arguments_length;
-                        total_data = file_size;
-                    }
-                }
-            }
-        }
-        else {
-            while (n == BUFFER_SIZE) {
-                memset(buffer, 0, BUFFER_SIZE);
-                n = read(newfd, buffer, BUFFER_SIZE);
-                if (n == -1) {
-                    printf("Erro nesta bomba - nao leu\n");
-                    exit(1);
-                }
-
-                string substring_buffer(buffer, buffer + n);
-                command += substring_buffer;
-            }
-        }
-
-        //process_request("LIN 103327 password\n");
-
-        string reply = process_request(command);
-
-        n = write(newfd, reply.c_str(), reply.length()); 
-        if (n == -1) {
-            exit(1);
-        }
-
-        close(newfd);
+    if (listen(tcp_fd, 5) == -1) {
+        exit(1);
     }
 
-    freeaddrinfo(res);
-    close(fd);
+    FD_ZERO(&inputs); 
+    FD_SET(0,&inputs); 
+    FD_SET(tcp_fd,&inputs); 
+
+    while (1) { 
+        testfds=inputs;
+
+        memset((void *)&timeout,0,sizeof(timeout));
+        timeout.tv_sec=10;
+
+        out_fds=select(FD_SETSIZE,&testfds,(fd_set *)NULL,(fd_set *)NULL,(struct timeval *) &timeout);
+
+        switch(out_fds)
+        {
+            case 0:
+                printf("\n ---------------Timeout event-----------------\n");
+                break;
+            case -1:
+                perror("select");
+                exit(1);
+            default:
+                // TODO UDP
+                if(FD_ISSET(udp_fd,&testfds))
+                {
+                    pid_t pid = fork();
+                    if (pid == -1) {
+                        perror("fork");
+                        exit(1);
+                    } else if (pid == 0) {
+                        udp_setup(udp_fd);
+                        exit(0);
+                    }
+                }
+                if(FD_ISSET(tcp_fd,&testfds))
+                { 
+                    pid_t pid = fork();
+                    if (pid == -1) {
+                        perror("fork");
+                        exit(1);
+                    } else if (pid == 0) {
+                        tcp_setup(tcp_fd);
+                        exit(0);
+                    }
+                }
+        }
+
+        
+    }
+
+    
 
     return 0;
 }
