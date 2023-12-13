@@ -27,6 +27,7 @@ using namespace std;
 
 string PORT = "58028";
 bool is_verbose_mode = false;
+bool is_tcp_pipe = false;
 
 string LOGIN_COMMAND = "LIN";
 string LOGOUT_COMMAND = "LOU";
@@ -129,8 +130,8 @@ string add_zeros_before_server(int zeros_amount, int number) {
 // #-------------------------------------------------------------------#
 
 string process_request(string request) {
-    if (true) {
-        // fazer verificações da mensagem em si
+    if (request[request.length() - 1] != '\n') {
+        return ERROR_REPLY + "\n";
     }
 
     request.pop_back(); // Removes last \n
@@ -145,37 +146,37 @@ string process_request(vector<string> request_arguments) {
     string command = request_arguments[0];
     request_arguments.erase(request_arguments.begin());
 
-    if (command == LOGIN_COMMAND) {
+    if (command == LOGIN_COMMAND && !is_tcp_pipe) {
         return LOGIN_REPLY + " " + process_login_attempt(request_arguments) + "\n";
     }
-    else if (command == LOGOUT_COMMAND) {
+    else if (command == LOGOUT_COMMAND && !is_tcp_pipe) {
         return LOGOUT_REPLY + " " + process_logout_attempt(request_arguments) + "\n";
     }
-    else if (command == UNREGISTER_COMMAND) {
+    else if (command == UNREGISTER_COMMAND && !is_tcp_pipe) {
         return UNREGISTER_REPLY + " " + process_unregister_attempt(request_arguments) + "\n";
     }
-    else if (command == LIST_AUCTIONS_TARGET_COMMAND) {
+    else if (command == LIST_AUCTIONS_TARGET_COMMAND && !is_tcp_pipe) {
         return LIST_AUCTIONS_TARGET_REPLY + " " + process_list_auctions_target(request_arguments) + "\n";
     }
-    else if (command == LIST_AUCTIONS_COMMAND) {
+    else if (command == LIST_AUCTIONS_COMMAND && !is_tcp_pipe) {
         return LIST_AUCTIONS_REPLY + " " + process_list_auctions(request_arguments) + "\n";
     }
-    else if (command == LIST_BIDS_TARGET_COMMAND) {
+    else if (command == LIST_BIDS_TARGET_COMMAND && !is_tcp_pipe) {
         return LIST_BIDS_TARGET_REPLY + " " + process_list_bids_target(request_arguments) + "\n";
     }
-    else if (command == SHOW_RECORD_COMMAND) {
+    else if (command == SHOW_RECORD_COMMAND && !is_tcp_pipe) {
         return SHOW_RECORD_REPLY + " " + process_show_record(request_arguments) + "\n";
     }
-    else if (command == OPEN_COMMAND) {
+    else if (command == OPEN_COMMAND && is_tcp_pipe) {
         return OPEN_REPLY + " " + process_open_attempt(request_arguments) + "\n";
     }
-    else if (command == CLOSE_COMMAND) {
+    else if (command == CLOSE_COMMAND && is_tcp_pipe) {
         return CLOSE_REPLY + " " + process_close_attempt(request_arguments) + "\n";
     }
-    else if (command == SHOW_ASSET_COMMAND) {
+    else if (command == SHOW_ASSET_COMMAND && is_tcp_pipe) {
         return SHOW_ASSET_REPLY + " " + process_show_asset(request_arguments) + "\n";
     }
-    else if (command == BID_COMMAND) {
+    else if (command == BID_COMMAND && is_tcp_pipe) {
         return BID_REPLY + " " + process_bid_attempt(request_arguments) + "\n";
     }
 
@@ -672,7 +673,7 @@ int setup_server_settings(int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
     if (setup_server_settings(argc, argv) == -1) {
-        cout << "Wrong arguments\n";
+        cout << "Invalid arguments\n";
         return 0;
     }
 
@@ -711,6 +712,7 @@ int main(int argc, char *argv[]) {
                         perror("fork");
                         exit(1);
                     } else if (pid == 0) {
+                        is_tcp_pipe = false;
                         execute_udp(udp_fd);
                         exit(0);
                     }
@@ -721,6 +723,7 @@ int main(int argc, char *argv[]) {
                         perror("fork");
                         exit(1);
                     } else if (pid == 0) {
+                        is_tcp_pipe = true;
                         execute_tcp(tcp_fd);
                         exit(0);
                     }

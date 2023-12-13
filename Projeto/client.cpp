@@ -14,12 +14,10 @@
 #include <fstream>
 #include "ArgumentVerification.h"
 
-#define PORT "58028" 
-#define ADDRESS "127.0.0.1"
-//"58028" 
-//"127.0.0.1"
-
 using namespace std;
+
+string PORT = "58028";
+string ADDRESS = "127.0.0.1";
 
 int udp_errcode, udp_socket;
 socklen_t udp_addrlen;
@@ -30,10 +28,10 @@ int tcp_errcode, tcp_socket;
 struct addrinfo tcp_hints,*tcp_res;
 
 ssize_t n;
-string password;// = "password";
+string password;
 string temp_pass;
-string uid;// = "103327";
-bool logged_in = false;//= true;
+string uid;
+bool logged_in = false;
 
 
 int read_from_file(const string& file_name, string& buffer) {
@@ -526,7 +524,7 @@ void createUDPSocket() {
     udp_hints.ai_family = AF_INET;
     udp_hints.ai_socktype = SOCK_DGRAM;
 
-    udp_errcode = getaddrinfo(ADDRESS, PORT, &udp_hints, &udp_res);
+    udp_errcode = getaddrinfo(ADDRESS.c_str(), PORT.c_str(), &udp_hints, &udp_res);
     if (udp_errcode != 0) {
         printf("Erro nesta bomba - deu erro\n");
         exit(1);
@@ -544,7 +542,7 @@ void createTCPSocket() {
     tcp_hints.ai_family = AF_INET;
     tcp_hints.ai_socktype = SOCK_STREAM;
 
-    tcp_errcode = getaddrinfo(ADDRESS, PORT, &tcp_hints, &tcp_res);
+    tcp_errcode = getaddrinfo(ADDRESS.c_str(), PORT.c_str(), &tcp_hints, &tcp_res);
     if (tcp_errcode != 0) {
         printf("Erro nesta bomba - deu erro\n");
         exit(1);
@@ -619,8 +617,44 @@ void sendTCP(string message) {
     cout << translated_message;
 }
 
+int setup_client_settings(int argc, char *argv[]) {
+    if (argc == 2 || argc == 4) {
+        return -1;
+    }
 
-int main() {
+    if (argc >= 3) {
+        if (!strcmp(argv[1], "-n")) {
+            ADDRESS = argv[2];
+        }
+        else if (!strcmp(argv[1], "-p")) {
+            PORT = argv[2];
+        }
+        else {
+            return -1;
+        }
+    }
+    
+    if (argc == 5) {
+        if (!strcmp(argv[3], "-n")) {
+            ADDRESS = argv[4];
+        }
+        else if (!strcmp(argv[3], "-p")) {
+            PORT = argv[4];
+        }
+        else {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+int main(int argc, char *argv[]) {
+    if (setup_client_settings(argc, argv)) {
+        cout << "Invalid arguments\n";
+        return 0;
+    }
+
     string write_buffer;
     string command;
     string translated_message;
