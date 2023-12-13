@@ -1,6 +1,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "AuctionManager.h"
 #include "ArgumentVerification.h"
 
@@ -620,7 +622,7 @@ void execute_udp(int fd) {
     string buffer_string(buffer, buffer + n);
     string reply = process_request(buffer_string);
 
-    n = sendto(fd, reply.c_str(), reply.length(), 0, udp_res->ai_addr, udp_res->ai_addrlen);
+    n = sendto(fd, reply.c_str(), reply.length(), 0, (struct sockaddr *)&addr, addrlen);
 }
 
 int main() {
@@ -641,13 +643,13 @@ int main() {
         testfds = inputs;
 
         memset((void *)&timeout, 0, sizeof(timeout));
-        timeout.tv_sec=10;
+        timeout.tv_sec=120;
 
         out_fds = select(FD_SETSIZE, &testfds, (fd_set *)NULL, (fd_set *)NULL, (struct timeval *) &timeout);
 
         switch (out_fds) {
             case 0:
-                printf("\n ---------------Timeout event-----------------\n");
+                //printf("\n ---------------Timeout event-----------------\n");
                 break;
             case -1:
                 perror("select");
@@ -673,6 +675,7 @@ int main() {
                         exit(0);
                     }
                 }
+                 wait(NULL);
         }
     }
 

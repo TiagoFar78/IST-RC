@@ -14,8 +14,10 @@
 #include <fstream>
 #include "ArgumentVerification.h"
 
-#define PORT "58011"
-#define ADDRESS "tejo.tecnico.ulisboa.pt"
+#define PORT "58028" 
+#define ADDRESS "127.0.0.1"
+//"58028" 
+//"127.0.0.1"
 
 using namespace std;
 
