@@ -2,9 +2,12 @@
 #include <fstream>
 #include <dirent.h>
 #include <vector>
+#include <algorithm>
 #include <sys/stat.h>
 #include <filesystem>
 #include "AuctionManager.h"
+
+#define MAX_SHOWN_BIDS 50
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -437,13 +440,22 @@ vector<vector<string>> get_auction_bids_details(int aID) {
         return bids_details;
     }
 
+    int bid_count = 0;
     for (const auto& entry : fs::directory_iterator("ASDIR/AUCTIONS/" + aID_string + "/BIDS")) {
+        bid_count++;
+
         string bid_file_name = entry.path().string();
 
         string bid_file_contents;
         read_from_file(bid_file_name, bid_file_contents);
         bids_details.push_back(split_string(bid_file_contents, ' '));
+
+        if (bid_count == MAX_SHOWN_BIDS) {
+            break;
+        }
     }
+
+    //reverse(bids_details.begin(), bids_details.end());
 
     return bids_details;
 }
