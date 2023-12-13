@@ -695,16 +695,15 @@ int bid(int uID, int aID, int value) {
         return -1;
     }
 
-    int start_time;
+    string start_file_contents;
+    read_from_file(start_file_name, start_file_contents);
+
+    vector<string> contents_splitted = split_string(start_file_contents, ' ');
+
+    int start_time = atoi(contents_splitted[7].c_str());
 
     int higher_bid = get_higher_bid(aID);
     if (higher_bid == 0) {
-        string start_file_contents;
-        read_from_file(start_file_name, start_file_contents);
-
-        vector<string> contents_splitted = split_string(start_file_contents, ' ');
-
-        start_time = atoi(contents_splitted[7].c_str());
         higher_bid = atoi(contents_splitted[3].c_str());
     }
 
