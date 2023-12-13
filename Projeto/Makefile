@@ -34,3 +34,12 @@ servertests:
 	echo "$(SigmaIP) 58028 14" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report14.html
 	echo "$(SigmaIP) 58028 15" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report15.html
 	echo "The next tests must be done manually"
+	
+	#login 111111 aaaaaaaa
+	#login 222222 bbbbbbbb
+	#login 333333 cccccccc
+	#login 444444 dddddddd
+	#"$(SigmaIP) 58028 21" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report21.html
+	#"$(SigmaIP) 58028 22" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report22.html
+	#"$(SigmaIP) 58028 23" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report23.html
+	#"$(SigmaIP) 58028 24" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report24.html
