@@ -37,7 +37,7 @@ bool logged_in = false;//= true;
 
 
 int read_from_file(const string& file_name, string& buffer) {
-    ifstream file(file_name);
+    ifstream file(file_name, ios::binary);
     if (file.is_open()) {
         file.seekg(0, ios::end);
         streamsize size = file.tellg();
@@ -172,7 +172,7 @@ string translateInput(string command, vector<string> input) {
             return "invalid";
         }
         prefix = "OPA ";
-        string fileContents;
+        string fileContents;    
         
         read_from_file(input[1], fileContents);
         string fileSize = to_string(getFileSize(input[1]));
@@ -493,15 +493,15 @@ string translateOutput(string message) {
                 return "received invalid reply\n";
             }
 
-            create_file("FilesFromClient/" + output[0]);
-            write_on_file("FilesFromClient/" + output[0], content, true);
+            create_file(output[0]);
+            write_on_file(output[0], content, true);
 
             size_t filesize = stoi(output[1]);
-            if(getFileSize("FilesFromClient/" + output[0]) != filesize) {
+            if(getFileSize(output[0]) != filesize) {
                 return "received invalid reply\n";
             }
 
-            return output[0] + " is stored in the directory FilesFromClient.\n";
+            return output[0] + " is stored in the current directory.\n";
         
         } else if (status == "NOK\n") {
             return "there is no file to be sent, or some other problem\n";

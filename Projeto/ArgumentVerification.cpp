@@ -273,6 +273,8 @@ bool is_unexpected_open_input(vector<string> arguments, bool is_from_client) {
     string name, value, timeactive, fname;
     if (is_from_client) {
         arguments_required = 4;
+        if (arguments.size() < arguments_required)
+            return true;
         name = arguments[0];
         fname = arguments[1];
         value = arguments[2];
