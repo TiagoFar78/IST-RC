@@ -21,10 +21,12 @@ using namespace std;
 // |                             Constants                             |
 // #-------------------------------------------------------------------#
 
-#define PORT "58028"
 #define BUFFER_SIZE 2048
 #define COMMAND_BUFFER_SIZE 3
 #define UDP_BUFFER_SIZE 6000
+
+string PORT = "58028";
+bool is_verbose_mode = false;
 
 string LOGIN_COMMAND = "LIN";
 string LOGOUT_COMMAND = "LOU";
@@ -638,7 +640,37 @@ void execute_udp(int fd) {
     n = sendto(fd, reply.c_str(), reply.length(), 0, (struct sockaddr *)&addr, addrlen);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc == 1) {
+        if (strcmp(argv[0], "-v")) {
+            cout << "Wrong startup";
+            return 0;
+        }
+
+        is_verbose_mode = true;
+    }
+    else if (argc >= 2) {
+        if (strcmp(argv[0], "-p")) {
+            cout << "Wrong startup";
+            return 0;
+        }
+
+        int PORT = atoi(argv[1]);
+        if (PORT == 0) {
+            cout << "Wrong startup";
+            return 0;
+        }
+
+        if (argc == 3) {
+            if (strcmp(argv[2], "-v")) {
+                cout << "Wrong startup";
+                return 0;
+            }
+
+            is_verbose_mode = true;
+        }
+    }
+
     cout << "Abriu o server\n";
 
     fd_set inputs, testfds;
