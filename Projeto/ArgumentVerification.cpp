@@ -21,6 +21,10 @@ bool is_unexpected_uid(string uID_string) {
         }
     }
 
+    if(uID_string[0] != '1') {
+        return true;
+    }
+
     return false;
 }
 

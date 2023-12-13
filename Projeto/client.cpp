@@ -491,9 +491,15 @@ string translateOutput(string message) {
                 return "received invalid reply\n";
             }
 
-            create_file(output[0]);
-            write_on_file(output[0], content, true);
-            return output[0] + " " + output[1] + "\n";
+            create_file("FilesFromClient/" + output[0]);
+            write_on_file("FilesFromClient/" + output[0], content, true);
+
+            size_t filesize = stoi(output[1]);
+            if(getFileSize("FilesFromClient/" + output[0]) != filesize) {
+                return "received invalid reply\n";
+            }
+
+            return output[0] + " is stored in the directory FilesFromClient.\n";
         
         } else if (status == "NOK\n") {
             return "there is no file to be sent, or some other problem\n";
@@ -610,6 +616,7 @@ void sendTCP(string message) {
     translated_message = translateOutput(full_output);
     cout << translated_message;
 }
+
 
 int main() {
     string write_buffer;
