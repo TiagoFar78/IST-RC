@@ -109,6 +109,19 @@ string process_bid_attempt(vector<string> request_arguments);
     return result;
 }*/
 
+string add_zeros_before_server(int zeros_amount, int number) {
+    string s = "";
+    string number_string = to_string(number);
+    int zeros_to_add = zeros_amount - number_string.length();
+    for (int i = 0; i < zeros_to_add; i++) {
+        s += to_string(0);
+    }
+
+    s += number_string;
+
+    return s;
+}
+
 // #-------------------------------------------------------------------#
 // |                          Process Request                          |
 // #-------------------------------------------------------------------#
@@ -377,7 +390,7 @@ string process_open_attempt(vector<string> request_arguments) {
         return NOT_LOGGED_IN_REPLY;
     }
 
-    return OK_REPLY + " " + to_string(return_code);
+    return OK_REPLY + " " + add_zeros_before_server(3, return_code);
 }
 
 string process_close_attempt(vector<string> request_arguments) {
