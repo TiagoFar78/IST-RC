@@ -78,7 +78,7 @@ bool is_unexpected_name(string name) {
         return true;
 
     for (char c : name) {
-        if (!isalnum(c)) {
+        if (!isalnum(c) && c != '-' && c != '_' && c != '.') {
             return true;
         }
     }
