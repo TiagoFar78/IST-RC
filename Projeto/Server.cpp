@@ -583,8 +583,6 @@ void execute_tcp(int fd) {
         }
     }
 
-    //process_request("LIN 103327 password\n");
-
     string reply = process_request(command);
 
     n = write(newfd, reply.c_str(), reply.length()); 
@@ -640,35 +638,42 @@ void execute_udp(int fd) {
     n = sendto(fd, reply.c_str(), reply.length(), 0, (struct sockaddr *)&addr, addrlen);
 }
 
-int main(int argc, char *argv[]) {
+// >-------------------------{ Server }-------------------------<
+
+int setup_server_settings(int argc, char *argv[]) {
     if (argc == 2) {
         if (strcmp(argv[1], "-v")) {
-            cout << "Wrong startup\n";
-            return 0;
+            return -1;
         }
 
         is_verbose_mode = true;
     }
     else if (argc >= 3) {
         if (strcmp(argv[1], "-p")) {
-            cout << "Wrong startup\n";
             return 0;
         }
 
         if (atoi(argv[2]) == 0) {
-            cout << "Wrong startup\n";
-            return 0;
+            return -1;
         }
         PORT = argv[2];
 
         if (argc == 4) {
             if (strcmp(argv[3], "-v")) {
-            cout << "Wrong startup\n";
-                return 0;
+                return -1;
             }
 
             is_verbose_mode = true;
         }
+    }
+
+    return 0;
+}
+
+int main(int argc, char *argv[]) {
+    if (setup_server_settings(argc, argv) == -1) {
+        cout << "Wrong arguments\n";
+        return 0;
     }
 
     cout << "Abriu o server\n";

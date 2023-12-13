@@ -1,5 +1,5 @@
 CC=g++
-SigmaIP=193.136.128.103
+SigmaIP=193.136.128.109
 
 all: CompileServer CompileClient
 
@@ -33,17 +33,4 @@ servertests:
 	echo "$(SigmaIP) 58028 13" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report13.html
 	echo "$(SigmaIP) 58028 14" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report14.html
 	echo "$(SigmaIP) 58028 15" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report15.html
-	echo "$(SigmaIP) 58028 16" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report16.html
-	echo "$(SigmaIP) 58028 17" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report17.html
-	echo "$(SigmaIP) 58028 18" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report18.html
-	echo "$(SigmaIP) 58028 19" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report19.html
-	echo "$(SigmaIP) 58028 20" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report20.html
-	echo "$(SigmaIP) 58028 21" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report21.html
-	echo "$(SigmaIP) 58028 22" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report22.html
-	echo "$(SigmaIP) 58028 23" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report23.html
-	echo "$(SigmaIP) 58028 24" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report24.html
-	echo "$(SigmaIP) 58028 25" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report25.html
-	echo "$(SigmaIP) 58028 26" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report26.html
-	echo "$(SigmaIP) 58028 27" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report27.html
-	echo "$(SigmaIP) 58028 28" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report28.html
-	echo "$(SigmaIP) 58028 29" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report29.html
+	echo "The next tests must be done manually"

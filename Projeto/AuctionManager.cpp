@@ -607,6 +607,14 @@ int close(int aID) {
 
     create_file(end_file_name);
 
+    string start_file_name = "ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt";
+    string start_file_contents;
+    read_from_file(start_file_name, start_file_contents);
+
+    vector<string> contents_arguments = split_string(start_file_contents, ' ');
+
+    int start_time = stoi(contents_arguments[7]);
+
     int return_code = 0;
     time_t end_time;
 
@@ -619,13 +627,15 @@ int close(int aID) {
         time(&end_time);
     }
 
+    int seconds_until_end = end_time - start_time;
+
     struct tm* end_date_time = gmtime(&end_time);
     string end_date_time_string = add_zeros_before(4, end_date_time->tm_year + 1900) + "-" + 
             add_zeros_before(2, end_date_time->tm_mon + 1) + "-" + add_zeros_before(2, end_date_time->tm_mday) + " " +
             add_zeros_before(2, end_date_time->tm_hour) + ":" + add_zeros_before(2, end_date_time->tm_min) + ":" +
             add_zeros_before(2, end_date_time->tm_sec);
 
-    string end_file_contents = end_date_time_string + " " + to_string(end_time);
+    string end_file_contents = end_date_time_string + " " + to_string(seconds_until_end);
     write_on_file(end_file_name, end_file_contents, true);
 
     return return_code;
