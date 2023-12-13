@@ -695,12 +695,17 @@ int bid(int uID, int aID, int value) {
         return -1;
     }
 
+    int start_time;
+
     int higher_bid = get_higher_bid(aID);
     if (higher_bid == 0) {
         string start_file_contents;
         read_from_file(start_file_name, start_file_contents);
 
-        higher_bid = atoi(split_string(start_file_contents, ' ')[3].c_str());
+        vector<string> contents_splitted = split_string(start_file_contents, ' ');
+
+        start_time = atoi(contents_splitted[7].c_str());
+        higher_bid = atoi(contents_splitted[3].c_str());
     }
 
     if (value <= higher_bid) {
@@ -724,15 +729,16 @@ int bid(int uID, int aID, int value) {
     time(&full_time);
 
     struct tm *current_time = gmtime(&full_time);
+    int time_until_bid = full_time - start_time;
 
     string time_string = add_zeros_before(4, current_time->tm_year + 1900) + "-" + 
             add_zeros_before(2, current_time->tm_mon + 1) + "-" + add_zeros_before(2, current_time->tm_mday) + " " +
             add_zeros_before(2, current_time->tm_hour) + ":" + add_zeros_before(2, current_time->tm_min) + ":" +
             add_zeros_before(2, current_time->tm_sec);
     
-    string contents_file_name = uID_string + " " + to_string(value) + " " + time_string + " " + to_string(full_time);
+    string contents = uID_string + " " + to_string(value) + " " + time_string + " " + add_zeros_before(5, time_until_bid);
 
-    write_on_file(bid_file_name, contents_file_name, true);
+    write_on_file(bid_file_name, contents, true);
 
     return 0;
 }
