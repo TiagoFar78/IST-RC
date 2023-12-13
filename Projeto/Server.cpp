@@ -493,7 +493,7 @@ int tcp_setup() {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    int errcode = getaddrinfo(NULL, PORT, &hints, &tcp_res);
+    int errcode = getaddrinfo(NULL, PORT.c_str(), &hints, &tcp_res);
     if (errcode != 0) {
         exit(1);
     }
@@ -612,7 +612,7 @@ int udp_setup() {
     hints.ai_socktype=SOCK_DGRAM;
     hints.ai_flags=AI_PASSIVE;
 
-    int errcode = getaddrinfo(NULL, PORT, &hints, &udp_res);
+    int errcode = getaddrinfo(NULL, PORT.c_str(), &hints, &udp_res);
     if (errcode != 0) {
         exit(1);
     }
@@ -641,29 +641,29 @@ void execute_udp(int fd) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc == 1) {
-        if (strcmp(argv[0], "-v")) {
-            cout << "Wrong startup";
+    if (argc == 2) {
+        if (strcmp(argv[1], "-v")) {
+            cout << "Wrong startup\n";
             return 0;
         }
 
         is_verbose_mode = true;
     }
-    else if (argc >= 2) {
-        if (strcmp(argv[0], "-p")) {
-            cout << "Wrong startup";
+    else if (argc >= 3) {
+        if (strcmp(argv[1], "-p")) {
+            cout << "Wrong startup\n";
             return 0;
         }
 
-        int PORT = atoi(argv[1]);
-        if (PORT == 0) {
-            cout << "Wrong startup";
+        if (atoi(argv[2]) == 0) {
+            cout << "Wrong startup\n";
             return 0;
         }
+        PORT = argv[2];
 
-        if (argc == 3) {
-            if (strcmp(argv[2], "-v")) {
-                cout << "Wrong startup";
+        if (argc == 4) {
+            if (strcmp(argv[3], "-v")) {
+            cout << "Wrong startup\n";
                 return 0;
             }
 
