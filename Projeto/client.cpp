@@ -451,6 +451,9 @@ string translateOutput(string message) {
         if (status == "OK") {
             string print;
             int increase = 0;
+
+            output[output.size() - 1].pop_back();
+
             print = "Auction name: " + output[1] + ", hosted by " + output[0] 
                     + "\nAsset file name: " + output[2] +"\nStarted: " + output[4]
                     + ", " + output[5] + " with start value: " + output[3] + "\nTo stay open for "
@@ -458,14 +461,12 @@ string translateOutput(string message) {
 
             for(int i = 7; i < output.size(); i = i + increase) {
                 if (output[i] == "E") {
-                    output[i + 3].pop_back();
-                    print += "\nEnded at " + output[i + 1] + ", " + output[i + 2] + " (" + output [i + 3] 
+                    print += "\nEnded at " + output[i + 1] + ", " + output[i + 2] + " (" + output[i + 3] 
                     + " after the start of the bid)\n";
                     increase = 4;
                 } else if (output[i] == "B") {
-                    output[i + 5].pop_back();
                     print += "\nBid by user " + output[i + 1] + " with value " + output[i + 2]
-                    + " was placed at " + output[i +3] + ", " + output[i + 4] + " (" + output [i + 5] 
+                    + " was placed at " + output[i +3] + ", " + output[i + 4] + " (" + output[i + 5] 
                     + " after the start of the bid)\n";
 
                     increase = 6;

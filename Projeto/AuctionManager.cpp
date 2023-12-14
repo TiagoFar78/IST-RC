@@ -7,7 +7,7 @@
 #include <filesystem>
 #include "AuctionManager.h"
 
-#define MAX_SHOWN_BIDS 50
+#define MAX_SHOWN_BIDS 5
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -25,6 +25,10 @@ int auction_expired_time(int aID);
 // #-------------------------------------------------------------------#
 
 // > --------------------- { Useful Functions } --------------------- <
+
+bool compareBids(const vector<string>& bid1, const vector<string>& bid2) {
+    return stoi(bid1[1]) < stoi(bid2[1]);
+}
 
 int getLastIndexOfSlash(const string& s) {
 	for(int i = s.length() - 1; i >= 0; i--) {
@@ -449,13 +453,12 @@ vector<vector<string>> get_auction_bids_details(int aID) {
         string bid_file_contents;
         read_from_file(bid_file_name, bid_file_contents);
         bids_details.push_back(split_string(bid_file_contents, ' '));
-
-        if (bid_count == MAX_SHOWN_BIDS) {
-            break;
-        }
     }
 
-    //reverse(bids_details.begin(), bids_details.end());
+    sort(bids_details.begin(), bids_details.end(), compareBids);
+    if (bids_details.size() > MAX_SHOWN_BIDS) {
+        bids_details.erase(bids_details.begin(), bids_details.end() - MAX_SHOWN_BIDS);
+    }
 
     return bids_details;
 }
