@@ -287,6 +287,10 @@ string process_list_auctions_target(vector<string> request_arguments) {
     int uID = atoi(request_arguments[0].c_str());
     current_uid = to_string(uID);
 
+    if (!is_registered(uID)) {
+        return NOT_OK_REPLY;
+    }
+
     if (!is_logged_in(uID)) {
         return NOT_LOGGED_IN_REPLY;
     }
@@ -331,6 +335,10 @@ string process_list_bids_target(vector<string> request_arguments) {
 
     int uID = atoi(request_arguments[0].c_str());
     current_uid = to_string(uID);
+
+    if (!is_registered(uID)) {
+        return NOT_OK_REPLY;
+    }
 
     if (!is_logged_in(uID)) {
         return NOT_LOGGED_IN_REPLY;
@@ -785,7 +793,7 @@ int main(int argc, char *argv[]) {
                         exit(0);
                     }
                 }
-                 wait(NULL);
+                wait(NULL);
         }
     }
 

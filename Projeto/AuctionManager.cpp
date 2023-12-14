@@ -543,7 +543,7 @@ int open_auction(int uID, const string& name, int start_value, int time_active, 
         return -1;
     }
 
-    if (file_size > 99999999) { // TODO fazer isto como deve de ser 
+    if (file_size > 99999999) {
         return -1;
     }
 
