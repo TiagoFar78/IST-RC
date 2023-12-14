@@ -235,11 +235,11 @@ string translateOutput(string message) {
     vector<string> output = splitString(message, ' ');
 
     if (message == "ERR\n") {
-        return "invalid message format\n";
+        return "Invalid message format\n"; 
     }
 
     if(output.size() < 2) {
-        return "received invalid reply\n";
+        return "Received invalid server reply\n"; 
     }
 
     string command = output[0];
@@ -248,232 +248,242 @@ string translateOutput(string message) {
     output.erase(output.begin());
 
     if (status == "ERR\n") {
-        return "invalid message format\n";
+        return "Invalid message format\n"; 
     }
 
     if (command == "RLI") {
         if(is_unexpected_login_output(output, status))
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
 
         if (status == "OK\n") {
             logged_in = true;
             password = temp_pass;
-            return "successful login\n";
+            return "Login successful\n";
 
         } else if (status == "NOK\n") {
-            return "incorrect login attempt\n";
+            return "Incorrect login attempt\n"; 
 
         } else if (status == "REG\n") {
             logged_in = true;
             password = temp_pass;
-            return "new user registered\n";
+            return "New user registered - Login successful\n"; 
 
         } else {
-            return "received invalid reply\n";
+            return "Received invalid server reply\n"; 
         }
 
     } else if (command == "RLO") {
         if(is_unexpected_logout_output(output, status))
-            return "received invalid reply\n";
+            return "Received invalid server reply\n"; 
 
         if (status == "OK\n") {
             logged_in = false;
-            return "successful logout\n";
+            return "Logout user " + uid + " successful\n"; 
 
         } else if (status == "NOK\n") {
-            return "user not logged in\n";
+            return "User not logged in\n";
 
         } else if (status == "UNR\n") {
-            return "unknown user\n";
+            return "Unknown user\n";
 
         } else {
-            return "received invalid reply\n";
+            return "Received invalid server reply\n"; 
         }
 
     } else if (command == "RUR") {
         if(is_unexpected_unregister_output(output, status))
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
 
         if (status == "OK\n") {
             logged_in = false;
-            return "successful unregister\n";
+            return "Unregister (and logout) user " + uid + " successful\n";
 
         } else if (status == "NOK\n") {
-            return "incorrect unregister attempt\n";
+            return "User not logged in\n";
 
         } else if (status == "UNR\n") {
-            return "unknown user\n";
+            return "Unknown user\n";
 
         } else {
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
         }
 
     } else if (command == "ROA") {
         if(is_unexpected_open_output(output, status))
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
 
         if (status == "OK") {
-            return "successful " + output[0];
+            return "Open successful. Auction ID = " + output[0]; //done
 
         } else if (status == "NOK\n") {
-            return "auction could not be started\n";
+            return "Auction could not be started\n";
 
         } else if (status == "NLG\n") {
-            return "user not logged in\n";
+            return "User not logged in\n";
 
         } else {
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
         }
 
     } else if (command == "RCL") {
         if(is_unexpected_close_output(output, status))
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
 
         if (status == "OK\n") {
-            return "successfully closed\n";
+            return "Successfully closed\n";
 
         } else if (status == "NLG\n") {
-            return "user not logged in\n";
+            return "User not logged in\n";
 
         } else if (status == "EAU\n") {
-            return "auction does not exist\n";
+            return "Auction does not exist\n";
 
         } else if (status == "EOW\n") {
-            return "auction is not owned by user " + uid + "\n";
+            return "Auction is not owned by user " + uid + "\n";
 
         } else if (status == "END\n") {
-            return "auction has already finished\n";
+            return "Auction has already finished\n";
 
         } else {
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
         }
 
     } else if (command == "RMA") {
         if(is_unexpected_myauctions_output(output, status))
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
 
         if (status == "OK") {
             string message, status;
 
             for(int i = 0; i < output.size() - 1; i = i + 2) {
-                status = "active\n";
+                status = "Active\n";
                 if(output[i + 1] == "0" || output[i + 1] == "0\n") {
-                    status = "inactive\n";
+                    status = "Inactive\n";
                 } 
-                message += output[i] + " " + status;
+                message += output[i] + " - " + status;
             }
             return message;
         
         } else if (status == "NOK\n") {
-            return "no ongoing auctions\n";
+            return "No ongoing auctions\n";
 
         } else if (status == "NLG\n") {
-            return "user not logged in\n";
+            return "User not logged in\n";
 
         } else {
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
         }
     
     } else if (command == "RMB") {
         if(is_unexpected_mybids_output(output, status))
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
 
         if (status == "OK") {
             string message, status;
             for(int i = 0; i < output.size() - 1; i = i + 2) {
-                status = "active";
+                status = "Active";
                  if(output[i + 1] == "0" || output[i + 1] == "0\n") {
-                    status = "inactive";
+                    status = "Inactive";
                 }
-                message += output[i] + " " + status + "\n";
+                message += output[i] + " - " + status + "\n";
             }
             return message;
         
         } else if (status == "NOK\n") {
-            return "no ongoing bids\n";
+            return "No ongoing bids\n";
 
         } else if (status == "NLG\n") {
-            return "user not logged in\n";
+            return "User not logged in\n";
 
         } else {
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
         }
 
     } else if (command == "RLS") {
         if (status == "OK") {
             if(is_unexpected_list_output(output, status))
-                return "received invalid reply\n";
+                return "Received invalid server reply\n";
 
             string message, status;
             for(int i = 0; i < output.size() - 1; i = i + 2) {
-                status = "active";
+                status = "Active";
                 if(output[i + 1] == "0" || output[i + 1] == "0\n") {
-                    status = "inactive";
+                    status = "Inactive";
                 }
-                message += output[i] + " " + status + "\n";
+                message += output[i] + " - " + status + "\n";
             }
             return message;
         
         } else if (status == "NOK\n") {
-            return "no auction was yet started\n";
+            return "No auction was yet started\n";
 
         } else {
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
         }
         
     } else if (command == "RBD") {
         if(is_unexpected_bid_output(output, status))
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
 
         if (status == "NOK\n") {
-            return "auction is not active\n";
+            return "Auction is not active\n";
 
         } else if (status == "NLG\n") {
-            return "user not logged in\n";
+            return "User not logged in\n";
 
         } else if (status == "ACC\n") {
-            return "bid was accepted\n";
+            return "Bid was accepted\n"; 
 
         } else if (status == "REF\n") {
-            return "bid was refused because a larger bid has already been placed previously\n";
+            return "Bid was refused because a larger bid has already been placed previously\n"; 
             
         } else if (status == "ILG\n") {
-            return "tried to make a bid in an auction hosted by yourself\n";
+            return "Auction host not allowed to bid\n";
 
         } else {
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
         }
 
     } else if (command == "RRC") {
         if(is_unexpected_show_record_output(output, status))
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
 
         if (status == "OK") {
             string print;
-            for(int i = 0; i < output.size(); i ++) {
-                if (output[i] == "E")
-                    print += "\nEnded";
-                else if (output[i] == "B")
-                    print += "\nBid";
-                else{
-                    print += output[i];
+            int increase = 0;
+            print = "Auction name: " + output[1] + ", hosted by " + output[0] 
+                    + "\nAsset file name: " + output[2] +"\nStarted: " + output[4]
+                    + ", " + output[5] + " with start value: " + output[3] + "\nTo stay open for "
+                    + output[6] + " seconds\n";
+
+            for(int i = 7; i < output.size(); i = i + increase) {
+                if (output[i] == "E") {
+                    output[i + 3].pop_back();
+                    print += "\nEnded at " + output[i + 1] + ", " + output[i + 2] + " (" + output [i + 3] 
+                    + " after the start of the bid)\n";
+                    increase = 4;
+                } else if (output[i] == "B") {
+                    output[i + 5].pop_back();
+                    print += "\nBid by user " + output[i + 1] + " with value " + output[i + 2]
+                    + " was placed at " + output[i +3] + ", " + output[i + 4] + " (" + output [i + 5] 
+                    + " after the start of the bid)\n";
+
+                    increase = 6;
                 }
-                if (i != output.size()-1)
-                    print += " ";
             }
 
             return print;
         
         } else if (status == "NOK\n") {
-            return "auction does not exist\n";
+            return "Auction does not exist\n";
 
         } else {
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
         }
         
     } else if (command == "RSA") {
         if(is_unexpected_show_asset_output(output, status))
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
 
         if (status == "OK") {
             string content;
@@ -488,7 +498,7 @@ string translateOutput(string message) {
                 content.pop_back();
 
             } else {
-                return "received invalid reply\n";
+                return "Received invalid server reply\n";
             }
 
             create_file(output[0]);
@@ -496,21 +506,21 @@ string translateOutput(string message) {
 
             size_t filesize = stoi(output[1]);
             if(getFileSize(output[0]) != filesize) {
-                return "received invalid reply\n";
+                return "Received invalid server reply\n";
             }
 
-            return output[0] + " is stored in the current directory.\n";
+            return "Asset file " + output[0] + " is stored in the current directory.\n"; //done
         
         } else if (status == "NOK\n") {
-            return "there is no file to be sent, or some other problem\n";
+            return "There is no file to be sent, or some other problem\n";
 
         } else {
-            return "received invalid reply\n";
+            return "Received invalid server reply\n";
         }
     
     }
 
-    return "received invalid reply\n";
+    return "Received invalid server reply\n";
 }
 
 void createUDPSocket() {
@@ -675,12 +685,12 @@ int main(int argc, char *argv[]) {
 
         translated_message = translateInput(command, input);
         if (translated_message == "invalid")
-            cout << "invalid message format\n";
+            cout << "Invalid message format\n";
 
         else {
             if (command == "login") {
                 if (logged_in) {
-                    cout << "first execute the logout command\n";
+                    cout << "First execute the logout command\n";
 
                 } else {
                     uid = input[1];
@@ -691,7 +701,7 @@ int main(int argc, char *argv[]) {
             } else if ((command == "logout") || (command == "unregister") || (command == "myauctions") || (command == "ma") 
                         || (command == "mybids") || (command == "mb")) { 
                 if(!logged_in) {
-                cout << "user not logged in\n";
+                cout << "User not logged in\n";
                 
                 } else {
                     sendUDP(translated_message);
@@ -702,7 +712,7 @@ int main(int argc, char *argv[]) {
 
             } else if ((command == "exit")) {
                 if (logged_in) {
-                    cout << "first execute the logout command\n";
+                    cout << "First execute the logout command\n";
 
                 } else {
                     break;
@@ -710,7 +720,7 @@ int main(int argc, char *argv[]) {
 
             } else if (command == "open" || command == "close" || command == "bid" || command == "b" ) {
                 if(!logged_in) {
-                cout << "user not logged in\n";
+                cout << "User not logged in\n";
                 
                 } else {
                     createTCPSocket();
@@ -726,7 +736,7 @@ int main(int argc, char *argv[]) {
                 close(tcp_socket);
 
             } else {
-                cout << "invalid message format\n";
+                cout << "Invalid message format\n";
             }
         }
     }
