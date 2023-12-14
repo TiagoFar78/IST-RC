@@ -725,6 +725,13 @@ int bid(int uID, int aID, int value) {
 
     vector<string> contents_splitted = split_string(start_file_contents, ' ');
 
+    string uID_string = to_string(uID);
+
+    string host_file_name = "ASDIR/USERS/" + uID_string + "/HOSTED/" + aID_string + ".txt";
+    if (file_exists(host_file_name)) {
+        return -3;
+    }
+
     int start_time = atoi(contents_splitted[7].c_str());
 
     int higher_bid = get_higher_bid(aID);
@@ -734,13 +741,6 @@ int bid(int uID, int aID, int value) {
 
     if (value <= higher_bid) {
         return -2;
-    }
-
-    string uID_string = to_string(uID);
-
-    string host_file_name = "ASDIR/USERS/" + uID_string + "/HOSTED/" + aID_string + ".txt";
-    if (file_exists(host_file_name)) {
-        return -3;
     }
 
     string bidder_file_name = "ASDIR/USERS/" + uID_string + "/BIDDED/" + aID_string + ".txt";
