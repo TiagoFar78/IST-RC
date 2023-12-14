@@ -26,8 +26,10 @@ using namespace std;
 #define UDP_BUFFER_SIZE 6000
 
 string PORT = "58028";
+bool is_tcp_socket = false;
 bool is_verbose_mode = false;
-bool is_tcp_pipe = false;
+string current_uid = "";
+string current_command = "";
 
 string LOGIN_COMMAND = "LIN";
 string LOGOUT_COMMAND = "LOU";
@@ -89,6 +91,8 @@ string process_close_attempt(vector<string> request_arguments);
 string process_show_asset(vector<string> request_arguments);
 string process_bid_attempt(vector<string> request_arguments);
 
+void show_process_in_terminal(struct sockaddr_in addr, socklen_t addrlen);
+
 // #------------------------------------------------------------------#
 // |                         Useful Functions                         |
 // #------------------------------------------------------------------#
@@ -146,37 +150,48 @@ string process_request(vector<string> request_arguments) {
     string command = request_arguments[0];
     request_arguments.erase(request_arguments.begin());
 
-    if (command == LOGIN_COMMAND && !is_tcp_pipe) {
+    if (command == LOGIN_COMMAND && !is_tcp_socket) {
+        current_command = command;
         return LOGIN_REPLY + " " + process_login_attempt(request_arguments) + "\n";
     }
-    else if (command == LOGOUT_COMMAND && !is_tcp_pipe) {
+    else if (command == LOGOUT_COMMAND && !is_tcp_socket) {
+        current_command = command;
         return LOGOUT_REPLY + " " + process_logout_attempt(request_arguments) + "\n";
     }
-    else if (command == UNREGISTER_COMMAND && !is_tcp_pipe) {
+    else if (command == UNREGISTER_COMMAND && !is_tcp_socket) {
+        current_command = command;
         return UNREGISTER_REPLY + " " + process_unregister_attempt(request_arguments) + "\n";
     }
-    else if (command == LIST_AUCTIONS_TARGET_COMMAND && !is_tcp_pipe) {
+    else if (command == LIST_AUCTIONS_TARGET_COMMAND && !is_tcp_socket) {
+        current_command = command;
         return LIST_AUCTIONS_TARGET_REPLY + " " + process_list_auctions_target(request_arguments) + "\n";
     }
-    else if (command == LIST_AUCTIONS_COMMAND && !is_tcp_pipe) {
+    else if (command == LIST_AUCTIONS_COMMAND && !is_tcp_socket) {
+        current_command = command;
         return LIST_AUCTIONS_REPLY + " " + process_list_auctions(request_arguments) + "\n";
     }
-    else if (command == LIST_BIDS_TARGET_COMMAND && !is_tcp_pipe) {
+    else if (command == LIST_BIDS_TARGET_COMMAND && !is_tcp_socket) {
+        current_command = command;
         return LIST_BIDS_TARGET_REPLY + " " + process_list_bids_target(request_arguments) + "\n";
     }
-    else if (command == SHOW_RECORD_COMMAND && !is_tcp_pipe) {
+    else if (command == SHOW_RECORD_COMMAND && !is_tcp_socket) {
+        current_command = command;
         return SHOW_RECORD_REPLY + " " + process_show_record(request_arguments) + "\n";
     }
-    else if (command == OPEN_COMMAND && is_tcp_pipe) {
+    else if (command == OPEN_COMMAND && is_tcp_socket) {
+        current_command = command;
         return OPEN_REPLY + " " + process_open_attempt(request_arguments) + "\n";
     }
-    else if (command == CLOSE_COMMAND && is_tcp_pipe) {
+    else if (command == CLOSE_COMMAND && is_tcp_socket) {
+        current_command = command;
         return CLOSE_REPLY + " " + process_close_attempt(request_arguments) + "\n";
     }
-    else if (command == SHOW_ASSET_COMMAND && is_tcp_pipe) {
+    else if (command == SHOW_ASSET_COMMAND && is_tcp_socket) {
+        current_command = command;
         return SHOW_ASSET_REPLY + " " + process_show_asset(request_arguments) + "\n";
     }
-    else if (command == BID_COMMAND && is_tcp_pipe) {
+    else if (command == BID_COMMAND && is_tcp_socket) {
+        current_command = command;
         return BID_REPLY + " " + process_bid_attempt(request_arguments) + "\n";
     }
 
@@ -189,6 +204,7 @@ string process_login_attempt(vector<string> request_arguments) {
     }
 
     int uID = atoi(request_arguments[0].c_str());
+    current_uid = to_string(uID);
     string password = request_arguments[1];
     int returnCode = login(uID, password);
 
@@ -211,6 +227,7 @@ string process_logout_attempt(vector<string> request_arguments) {
     }
 
     int uID = atoi(request_arguments[0].c_str());
+    current_uid = to_string(uID);
     string password = request_arguments[1];
     
     if (is_registered(uID)) {
@@ -239,6 +256,7 @@ string process_unregister_attempt(vector<string> request_arguments) {
     }
 
     int uID = atoi(request_arguments[0].c_str());
+    current_uid = to_string(uID);
     string password = request_arguments[1];
 
     if (is_registered(uID)) {
@@ -267,6 +285,7 @@ string process_list_auctions_target(vector<string> request_arguments) {
     }
 
     int uID = atoi(request_arguments[0].c_str());
+    current_uid = to_string(uID);
 
     if (!is_logged_in(uID)) {
         return NOT_LOGGED_IN_REPLY;
@@ -311,6 +330,7 @@ string process_list_bids_target(vector<string> request_arguments) {
     }
 
     int uID = atoi(request_arguments[0].c_str());
+    current_uid = to_string(uID);
 
     if (!is_logged_in(uID)) {
         return NOT_LOGGED_IN_REPLY;
@@ -367,8 +387,8 @@ string process_open_attempt(vector<string> request_arguments) {
         return ERROR_REPLY;
     }
 
-    // ler esta bomba de alguma forma
     int uID = atoi(request_arguments[0].c_str());
+    current_uid = to_string(uID);
     string password = request_arguments[1];
     string name = request_arguments[2];
     int value = atoi(request_arguments[3].c_str());
@@ -402,6 +422,7 @@ string process_close_attempt(vector<string> request_arguments) {
     }
 
     int uID = atoi(request_arguments[0].c_str());
+    current_uid = to_string(uID);
     string password = request_arguments[1];
     int aID = atoi(request_arguments[2].c_str());
 
@@ -447,6 +468,7 @@ string process_bid_attempt(vector<string> request_arguments) {
     }
 
     int uID = atoi(request_arguments[0].c_str());
+    current_uid = to_string(uID);
     string password = request_arguments[1];
     int aID = atoi(request_arguments[2].c_str());
     int value = atoi(request_arguments[3].c_str());
@@ -480,6 +502,7 @@ string process_bid_attempt(vector<string> request_arguments) {
 // >---------------------------{ TCP }---------------------------<
 
 struct addrinfo *tcp_res;
+struct sockaddr_in addr;
 
 int tcp_setup() {
     struct addrinfo hints;
@@ -512,7 +535,6 @@ int tcp_setup() {
 }
 
 void execute_tcp(int fd) {
-    struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
     int newfd = accept(fd, (struct sockaddr*)&addr, &addrlen);
     if (newfd == -1) {
@@ -592,6 +614,10 @@ void execute_tcp(int fd) {
     }
 
     close(newfd);
+
+    if (is_verbose_mode) {
+        show_process_in_terminal(addr, addrlen);
+    }
 }
 
 // >---------------------------{ UDP }---------------------------<
@@ -637,9 +663,40 @@ void execute_udp(int fd) {
     string reply = process_request(buffer_string);
 
     n = sendto(fd, reply.c_str(), reply.length(), 0, (struct sockaddr *)&addr, addrlen);
+
+    if (is_verbose_mode) {
+        show_process_in_terminal(addr, addrlen);
+    }
 }
 
 // >-------------------------{ Server }-------------------------<
+
+void show_process_in_terminal(struct sockaddr_in addr, socklen_t addrlen) {
+    char host[NI_MAXHOST + 1], service[NI_MAXSERV + 1];
+    memset(host, 0, NI_MAXHOST + 1);
+    memset(service, 0, NI_MAXSERV + 1);
+
+    int errcode = getnameinfo((struct sockaddr*) &addr, addrlen, host, NI_MAXHOST, service, NI_MAXSERV, 0);
+    if (errcode != 0) {
+        cout << "It was not possible to get client IP and port" << endl;
+        return;
+    }
+
+    cout << endl;
+    cout << "A new request was sent by " << host << ":" << service << endl;
+    if (current_command == "") {
+        cout << "An invalid command was used" << endl;
+        return;
+    }
+
+    cout << "The executed command was " << current_command;
+    if (current_uid == "") {
+        cout << endl;
+    }
+    else {
+        cout << " by the user with id " << current_uid << endl;
+    }
+}
 
 int setup_server_settings(int argc, char *argv[]) {
     if (argc == 2) {
@@ -712,7 +769,7 @@ int main(int argc, char *argv[]) {
                         perror("fork");
                         exit(1);
                     } else if (pid == 0) {
-                        is_tcp_pipe = false;
+                        is_tcp_socket = false;
                         execute_udp(udp_fd);
                         exit(0);
                     }
@@ -723,7 +780,7 @@ int main(int argc, char *argv[]) {
                         perror("fork");
                         exit(1);
                     } else if (pid == 0) {
-                        is_tcp_pipe = true;
+                        is_tcp_socket = true;
                         execute_tcp(tcp_fd);
                         exit(0);
                     }
