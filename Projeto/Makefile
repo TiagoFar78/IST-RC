@@ -1,5 +1,5 @@
 CC=g++
-SigmaIP=193.136.128.109
+SigmaIP=193.136.128.108
 
 all: CompileServer CompileClient
 
@@ -16,6 +16,12 @@ clean:
 	rm Client
 	rm Server
 	rm RunTests
+	
+entrarsigma:
+	ssh ist1103327@sigma.ist.utl.pt
+	
+passarficheiros:
+	scp -r ../Projeto ist1103327@sigma.ist.utl.pt:~/RC
 	
 servertests:
 	echo "$(SigmaIP) 58028 1" | nc tejo.tecnico.ulisboa.pt 59000 > Reports/report01.html

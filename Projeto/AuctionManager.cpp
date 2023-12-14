@@ -127,6 +127,7 @@ int write_on_file(const string& file_name, const string& buffer, bool clear_file
 
     if (file.is_open()) {
         file << buffer;
+        file.close();
         return 0;
     }
 
@@ -143,6 +144,7 @@ int read_from_file(const string& file_name, string& buffer) {
         buffer.resize(size);
         file.read(&buffer[0], size);
 
+        file.close();
         return 0;
     }
 
