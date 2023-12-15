@@ -30,6 +30,7 @@ bool is_tcp_socket = false;
 bool is_verbose_mode = false;
 string current_uid = "";
 string current_command = "";
+int current_fd;
 
 string LOGIN_COMMAND = "LIN";
 string LOGOUT_COMMAND = "LOU";
@@ -510,7 +511,6 @@ string process_bid_attempt(vector<string> request_arguments) {
 // >---------------------------{ TCP }---------------------------<
 
 struct addrinfo *tcp_res;
-struct sockaddr_in addr;
 
 int tcp_setup() {
     struct addrinfo hints;
@@ -543,11 +543,15 @@ int tcp_setup() {
 }
 
 void execute_tcp(int fd) {
+    current_fd = fd;
+
     socklen_t addrlen = sizeof(addr);
     int newfd = accept(fd, (struct sockaddr*)&addr, &addrlen);
     if (newfd == -1) {
         exit(1);
     }
+
+    current_fd = newfd;
 
     char buffer[BUFFER_SIZE + 1];
     memset(buffer, 0, BUFFER_SIZE + 1);
@@ -659,6 +663,8 @@ int udp_setup() {
 }
 
 void execute_udp(int fd) {
+    current_fd = fd;
+
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
     
@@ -678,6 +684,20 @@ void execute_udp(int fd) {
 }
 
 // >-------------------------{ Server }-------------------------<
+
+void send_error_message(string message) {
+    if (is_tcp_socket) {
+        n = write(current_fd, message.c_str(), message.length());
+        if (n == -1) {
+            exit(1);
+       }
+    }
+    else {
+        struct sockaddr_in addr;
+        socklen_t addrlen = sizeof(addr);
+        sendto(current_fd, message.c_str(), message.length(), 0, (struct sockaddr *)&addr, addrlen);
+    }
+}
 
 void show_process_in_terminal(struct sockaddr_in addr, socklen_t addrlen) {
     char host[NI_MAXHOST + 1], service[NI_MAXSERV + 1];
@@ -743,6 +763,8 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "Abriu o server\n";
+
+    signal(SIGCHILD, SIG_IGN);
 
     fd_set inputs, testfds;
     int out_fds;

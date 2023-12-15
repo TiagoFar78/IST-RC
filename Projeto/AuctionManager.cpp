@@ -1,4 +1,3 @@
-#include <iostream> // TODO retirar no fim serve para o cout
 #include <fstream>
 #include <dirent.h>
 #include <vector>
@@ -640,7 +639,7 @@ int close(int aID) {
             add_zeros_before(2, end_date_time->tm_hour) + ":" + add_zeros_before(2, end_date_time->tm_min) + ":" +
             add_zeros_before(2, end_date_time->tm_sec);
 
-    string end_file_contents = end_date_time_string + " " + to_string(seconds_until_end);
+    string end_file_contents = end_date_time_string + " " + add_zeros_before(5, seconds_until_end);
     write_on_file(end_file_name, end_file_contents, true);
 
     return return_code;
