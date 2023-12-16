@@ -660,7 +660,7 @@ void execute_tcp(int fd) {
     }
 
     string reply = process_request(command);
-    current_reply = reply.substr(0, reply.length() > 7 ? reply.length() : 7);
+    current_reply = reply.substr(0, reply.length() <= 7 ? reply.length() : 7);
 
     n = write(newfd, reply.c_str(), reply.length()); 
     if (n == -1) {
@@ -736,7 +736,7 @@ void execute_udp(int fd) {
 
     string buffer_string(buffer, buffer + n);
     string reply = process_request(buffer_string);
-    current_reply = reply.substr(0, reply.length() > 7 ? reply.length() : 7);
+    current_reply = reply.substr(0, reply.length() <= 7 ? reply.length() : 7);
 
     n = sendto(fd, reply.c_str(), reply.length(), 0, (struct sockaddr *)&addr, addrlen);
     if (n == -1) {
