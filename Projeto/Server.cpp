@@ -94,6 +94,7 @@ string process_show_asset(vector<string> request_arguments);
 string process_bid_attempt(vector<string> request_arguments);
 
 void show_process_in_terminal(struct sockaddr_in addr, socklen_t addrlen);
+void send_error_message(string message);
 
 // #------------------------------------------------------------------#
 // |                         Useful Functions                         |
@@ -572,6 +573,8 @@ void execute_tcp(int fd) {
         exit(1);
     }
 
+    setSocketTimeout(newfd, 5);
+
     current_fd = newfd;
 
     char buffer[BUFFER_SIZE + 1];
@@ -583,13 +586,12 @@ void execute_tcp(int fd) {
     ssize_t n = read(newfd, command_buffer, COMMAND_BUFFER_SIZE);
     if (n == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            cout << "Timeout in receiving udp message" << endl;
+            send_error_message("Timeout in receiving TCP message\n");
             return;
         } else {
-            perror("Error receiving UDP message");
-            exit(1);
+            send_error_message("Error receiving TCP message\n");
+            return;
         }
-
     }
 
     string command;
@@ -606,13 +608,12 @@ void execute_tcp(int fd) {
             n = read(newfd, buffer, BUFFER_SIZE);
             if (n == -1) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    cout << "Timeout in receiving udp message" << endl;
+                    send_error_message("Timeout in receiving TCP message\n");
                     return;
                 } else {
-                    perror("Error receiving UDP message");
-                    exit(1);
+                    send_error_message("Error receiving TCP message\n");
+                    return;
                 }
-
             }
 
             string substring_buffer(buffer, buffer + n);
@@ -647,13 +648,12 @@ void execute_tcp(int fd) {
             n = read(newfd, buffer, BUFFER_SIZE);
             if (n == -1) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    cout << "Timeout in receiving udp message" << endl;
+                    send_error_message("Timeout in receiving TCP message\n");
                     return;
                 } else {
-                    perror("Error receiving UDP message");
-                    exit(1);
+                    send_error_message("Error receiving TCP message\n");
+                    return;
                 }
-
             }
 
             string substring_buffer(buffer, buffer + n);
@@ -665,7 +665,8 @@ void execute_tcp(int fd) {
 
     n = write(newfd, reply.c_str(), reply.length()); 
     if (n == -1) {
-        exit(1);
+        send_error_message("Error sending TCP message\n");
+        return;
     }
 
     close(newfd);
@@ -719,19 +720,22 @@ void execute_udp(int fd) {
     ssize_t n = recvfrom(fd, buffer, UDP_BUFFER_SIZE, 0, (struct sockaddr *)&addr, &addrlen);
     if (n == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            cout << "Timeout in receiving udp message" << endl;
+            send_error_message("Timeout in receiving udp message\n");
             return;
         } else {
-            perror("Error receiving UDP message");
-            exit(1);
+            send_error_message("Error receiving UDP message\n");
+            return;
         }
-
     }
 
     string buffer_string(buffer, buffer + n);
     string reply = process_request(buffer_string);
 
     n = sendto(fd, reply.c_str(), reply.length(), 0, (struct sockaddr *)&addr, addrlen);
+    if (n == -1) {
+        send_error_message("Error sending UDP message\n");
+        return;
+    }
 
     if (is_verbose_mode) {
         show_process_in_terminal(addr, addrlen);
@@ -739,6 +743,23 @@ void execute_udp(int fd) {
 }
 
 // >-------------------------{ Server }-------------------------<
+
+void send_error_message(string message) {
+    if (is_tcp_socket) {
+        ssize_t n = write(current_fd, message.c_str(), message.length());
+        if (n == -1) {
+            cout << "An error occured sending an error message\n";
+        }
+    }
+    else {
+        struct sockaddr_in addr;
+        socklen_t addrlen = sizeof(addr);
+        ssize_t n = sendto(current_fd, message.c_str(), message.length(), 0, (struct sockaddr *)&addr, addrlen);
+        if (n == -1) {
+            cout << "An error occured sending an error message\n";
+        }
+    }
+}
 
 void show_process_in_terminal(struct sockaddr_in addr, socklen_t addrlen) {
     char host[NI_MAXHOST + 1], service[NI_MAXSERV + 1];
