@@ -1,5 +1,5 @@
 CC=g++
-SigmaIP=193.136.128.109
+SigmaIP=193.136.128.108
 
 all: CompileServer CompileClient
 
