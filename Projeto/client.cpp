@@ -11,6 +11,7 @@
 #include <vector>
 #include <iostream>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <fstream>
 #include "ArgumentVerification.h"
 
@@ -33,6 +34,16 @@ string temp_pass;
 string uid;
 bool logged_in = false;
 
+void setSocketTimeout(int socket, int timeoutSeconds) {
+    struct timeval timeout;
+    timeout.tv_sec = timeoutSeconds;
+    timeout.tv_usec = 0;
+
+    if (setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+        perror("Error setting receive timeout");
+        exit(1);
+    }
+}
 
 int read_from_file(const string& file_name, string& buffer) {
     ifstream file(file_name, ios::binary);
@@ -56,8 +67,8 @@ int getLastIndexOfSlash(const string& s) {
 			return i;
         }
 	}
-	
-	return -1;	
+
+	return -1;
 }
 
 int create_file(const string& file_name) {
@@ -116,7 +127,7 @@ size_t getFileSize(const string& file_name) {
     if (stat(file_name.c_str(), &file_stat) == 0) {
         return static_cast<size_t>(file_stat.st_size);
     } else {
-        return 0; 
+        return 0;
     }
 }
 
@@ -131,7 +142,7 @@ vector<string> splitString(string input, char delimiter) {
 
         if (input[i] == delimiter || i == input.length() - 1) {
             result.push_back(current);
-            current.clear(); 
+            current.clear();
         }
     }
 
@@ -146,88 +157,88 @@ string translateInput(string command, vector<string> input) {
 
     if (command == "login") {
         if (is_unexpected_login_input(input, true)) {
-            return "invalid";
+            return "Invalid login format";
         }
         prefix = "LIN ";
         arguments = input[0] + " " + input[1];
 
     } else if (command == "logout") {
         if (is_unexpected_logout_input(input, true)) {
-            return "invalid";
+            return "Invalid logout format";
         }
         prefix = "LOU ";
         arguments = uid + " " + password;
 
     } else if (command == "unregister") {
         if (is_unexpected_unregister_input(input, true)) {
-            return "invalid";
+            return "Invalid unregister format";
         }
         prefix = "UNR ";
         arguments = uid + " " + password;
 
     } else if (command == "open") {
         if (is_unexpected_open_input(input, true)) {
-            return "invalid";
+            return "Invalid open format";
         }
         prefix = "OPA ";
-        string fileContents;    
-        
+        string fileContents;
+
         read_from_file(input[1], fileContents);
         string fileSize = to_string(getFileSize(input[1]));
 
-        arguments = uid + " " + password + " " + input[0] + " " + input[2] + " " 
+        arguments = uid + " " + password + " " + input[0] + " " + input[2] + " "
                     + input[3] + " " + input[1] + " " + fileSize + " " + fileContents;
-        
+
     } else if (command == "close") {
         if (is_unexpected_close_input(input, true)) {
-            return "invalid";
+            return "Invalid close format";
         }
         prefix = "CLS ";
         arguments = uid + " " + password + " " + input[0];
-        
+
     } else if ((command == "myauctions") || (command == "ma")) {
         if (is_unexpected_list_auctions_target_input(input, true)) {
-            return "invalid";
+            return "Invalid myauctions format";
         }
         prefix = "LMA ";
         arguments = uid;
 
     } else if ((command == "mybids") || (command == "mb")) {
         if (is_unexpected_list_bids_target_input(input, true)) {
-            return "invalid";
+            return "Invalid mybids format";
         }
         prefix = "LMB ";
         arguments = uid;
 
     } else if ((command == "list") || (command == "l")) {
         if (is_unexpected_list_auctions_input(input, true)) {
-            return "invalid";
+            return "Invalid list format";
         }
         prefix = "LST";
 
     }  else if ((command == "show_asset") || (command == "sa")) {
         if (is_unexpected_show_asset_input(input, true)) {
-            return "invalid";
+            return "Invalid show_asset format";
         }
         prefix = "SAS ";
         arguments = input[0];
 
     } else if ((command == "bid") || (command == "b")) {
         if (is_unexpected_bid_input(input, true)) {
-            return "invalid";
+            return "Invalid bid format";
         }
         prefix = "BID ";
         arguments = uid + " " + password + " " + input[0] + " " + input[1];
 
     }  else if ((command == "show_record") || (command == "sr")) {
         if (is_unexpected_show_record_input(input, true)) {
-            return "invalid";
+            return "Invalid show_record format";
         }
         prefix = "SRC ";
         arguments = input[0];
     }
 
-    translated_message = prefix + arguments + "\n"; 
+    translated_message = prefix + arguments + "\n";
     return translated_message;
 }
 
@@ -235,21 +246,17 @@ string translateOutput(string message) {
     vector<string> output = splitString(message, ' ');
 
     if (message == "ERR\n") {
-        return "Invalid message format\n"; 
+        return "Invalid message command\n";
     }
 
     if(output.size() < 2) {
-        return "Received invalid server reply\n"; 
+        return "Received invalid server reply\n";
     }
 
     string command = output[0];
     string status = output[1];
     output.erase(output.begin());
     output.erase(output.begin());
-
-    if (status == "ERR\n") {
-        return "Invalid message format\n"; 
-    }
 
     if (command == "RLI") {
         if(is_unexpected_login_output(output, status))
@@ -261,24 +268,27 @@ string translateOutput(string message) {
             return "Login successful\n";
 
         } else if (status == "NOK\n") {
-            return "Incorrect login attempt\n"; 
+            return "Incorrect login attempt\n";
 
         } else if (status == "REG\n") {
             logged_in = true;
             password = temp_pass;
-            return "New user registered - Login successful\n"; 
+            return "New user registered - Login successful\n";
+        
+        } else if (status == "ERR\n") {
+            return "Invalid login format\n";
 
         } else {
-            return "Received invalid server reply\n"; 
+            return "Received invalid server reply\n";
         }
 
     } else if (command == "RLO") {
         if(is_unexpected_logout_output(output, status))
-            return "Received invalid server reply\n"; 
+            return "Received invalid server reply\n";
 
         if (status == "OK\n") {
             logged_in = false;
-            return "Logout user " + uid + " successful\n"; 
+            return "Logout user " + uid + " successful\n";
 
         } else if (status == "NOK\n") {
             return "User not logged in\n";
@@ -286,8 +296,11 @@ string translateOutput(string message) {
         } else if (status == "UNR\n") {
             return "Unknown user\n";
 
+        } else if (status == "ERR\n") {
+            return "Invalid logout format\n";
+
         } else {
-            return "Received invalid server reply\n"; 
+            return "Received invalid server reply\n";
         }
 
     } else if (command == "RUR") {
@@ -303,6 +316,9 @@ string translateOutput(string message) {
 
         } else if (status == "UNR\n") {
             return "Unknown user\n";
+
+        } else if (status == "ERR\n") {
+            return "Invalid unregister format\n";
 
         } else {
             return "Received invalid server reply\n";
@@ -320,6 +336,9 @@ string translateOutput(string message) {
 
         } else if (status == "NLG\n") {
             return "User not logged in\n";
+
+        } else if (status == "ERR\n") {
+            return "Invalid open format\n";
 
         } else {
             return "Received invalid server reply\n";
@@ -344,6 +363,9 @@ string translateOutput(string message) {
         } else if (status == "END\n") {
             return "Auction has already finished\n";
 
+        } else if (status == "ERR\n") {
+            return "Invalid close format\n";
+
         } else {
             return "Received invalid server reply\n";
         }
@@ -359,21 +381,24 @@ string translateOutput(string message) {
                 status = "Active\n";
                 if(output[i + 1] == "0" || output[i + 1] == "0\n") {
                     status = "Inactive\n";
-                } 
+                }
                 message += output[i] + " - " + status;
             }
             return message;
-        
+
         } else if (status == "NOK\n") {
             return "No ongoing auctions\n";
 
         } else if (status == "NLG\n") {
             return "User not logged in\n";
 
+        } else if (status == "ERR\n") {
+            return "Invalid myauctions format\n";
+
         } else {
             return "Received invalid server reply\n";
         }
-    
+
     } else if (command == "RMB") {
         if(is_unexpected_mybids_output(output, status))
             return "Received invalid server reply\n";
@@ -388,12 +413,15 @@ string translateOutput(string message) {
                 message += output[i] + " - " + status + "\n";
             }
             return message;
-        
+
         } else if (status == "NOK\n") {
             return "No ongoing bids\n";
 
         } else if (status == "NLG\n") {
             return "User not logged in\n";
+
+        } else if (status == "ERR\n") {
+            return "Invalid mybids format\n";
 
         } else {
             return "Received invalid server reply\n";
@@ -413,14 +441,17 @@ string translateOutput(string message) {
                 message += output[i] + " - " + status + "\n";
             }
             return message;
-        
+
         } else if (status == "NOK\n") {
             return "No auction was yet started\n";
+
+        } else if (status == "ERR\n") {
+            return "Invalid list format\n";
 
         } else {
             return "Received invalid server reply\n";
         }
-        
+
     } else if (command == "RBD") {
         if(is_unexpected_bid_output(output, status))
             return "Received invalid server reply\n";
@@ -432,13 +463,16 @@ string translateOutput(string message) {
             return "User not logged in\n";
 
         } else if (status == "ACC\n") {
-            return "Bid was accepted\n"; 
+            return "Bid was accepted\n";
 
         } else if (status == "REF\n") {
-            return "Bid was refused because a larger bid has already been placed previously\n"; 
-            
+            return "Bid was refused because a larger bid has already been placed previously\n";
+
         } else if (status == "ILG\n") {
             return "Auction host not allowed to bid\n";
+
+        } else if (status == "ERR\n") {
+            return "Invalid bid format\n";
 
         } else {
             return "Received invalid server reply\n";
@@ -454,19 +488,19 @@ string translateOutput(string message) {
 
             output[output.size() - 1].pop_back();
 
-            print = "Auction name: " + output[1] + ", hosted by " + output[0] 
+            print = "Auction name: " + output[1] + ", hosted by " + output[0]
                     + "\nAsset file name: " + output[2] +"\nStarted: " + output[4]
                     + ", " + output[5] + " with start value: " + output[3] + "\nTo stay open for "
                     + output[6] + " seconds\n";
 
             for(int i = 7; i < output.size(); i = i + increase) {
                 if (output[i] == "E") {
-                    print += "\nEnded at " + output[i + 1] + ", " + output[i + 2] + " (" + output[i + 3] 
+                    print += "\nEnded at " + output[i + 1] + ", " + output[i + 2] + " (" + output[i + 3]
                     + " after the start of the bid)\n";
                     increase = 4;
                 } else if (output[i] == "B") {
                     print += "\nBid by user " + output[i + 1] + " with value " + output[i + 2]
-                    + " was placed at " + output[i +3] + ", " + output[i + 4] + " (" + output[i + 5] 
+                    + " was placed at " + output[i +3] + ", " + output[i + 4] + " (" + output[i + 5]
                     + " after the start of the bid)\n";
 
                     increase = 6;
@@ -474,14 +508,17 @@ string translateOutput(string message) {
             }
 
             return print;
-        
+
         } else if (status == "NOK\n") {
             return "Auction does not exist\n";
+
+        } else if (status == "ERR\n") {
+            return "Invalid show_record format\n";
 
         } else {
             return "Received invalid server reply\n";
         }
-        
+
     } else if (command == "RSA") {
         if(is_unexpected_show_asset_output(output, status))
             return "Received invalid server reply\n";
@@ -511,14 +548,17 @@ string translateOutput(string message) {
             }
 
             return "Asset file " + output[0] + " is stored in the current directory.\n"; //done
-        
+
         } else if (status == "NOK\n") {
             return "There is no file to be sent, or some other problem\n";
+
+        } else if (status == "ERR\n") {
+            return "Invalid show_asset format\n";
 
         } else {
             return "Received invalid server reply\n";
         }
-    
+
     }
 
     return "Received invalid server reply\n";
@@ -540,6 +580,8 @@ void createUDPSocket() {
         printf("Erro nesta bomba - deu erro\n");
         exit(1);
     }
+
+    setSocketTimeout(udp_socket, 5);
 }
 
 void createTCPSocket() {
@@ -558,6 +600,8 @@ void createTCPSocket() {
         printf("Erro nesta bomba - deu erro\n");
         exit(1);
     }
+
+    setSocketTimeout(tcp_socket, 5);
 
     n = connect(tcp_socket, tcp_res->ai_addr, tcp_res->ai_addrlen);
     if (n == -1) {
@@ -582,8 +626,14 @@ void sendUDP(string message) {
     //como estou a endereçar mudar char buffer
     n = recvfrom(udp_socket, buffer , 6000, 0, (struct sockaddr*)&udp_addr, &udp_addrlen);
     if (n == -1) {
-        printf("Erro nesta bomba - nao escreveu\n");
-        exit(1);
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            cout << "Timeout in receiving udp message" << endl;
+            return;
+        } else {
+            perror("Error receiving UDP message");
+            exit(1);
+        }
+
     }
 
     string substring_buffer(buffer, buffer + n);
@@ -610,14 +660,28 @@ void sendTCP(string message) {
     }
 
     n = read(tcp_socket, buffer, 1024);
+    if (n == -1) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            cout << "Timeout in receiving tcp message" << endl;
+            return;
+        } else {
+            perror("Error receiving TCP message");
+            exit(1);
+        }
+    }
     string substring_buffer(buffer, buffer + n);
     full_output += substring_buffer;
     memset(buffer, 0, 1024);
     while(n != 0) {
         n = read(tcp_socket, buffer, 1024);
         if (n == -1) {
-            printf("Erro nesta bomba - nao leu\n");
-            exit(1);
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                cout << "Timeout in receiving tcp message" << endl;
+                return;
+            } else {
+                perror("Error receiving TCP message");
+                exit(1);
+            }
         }
         string substring_buffer(buffer, buffer + n);
         full_output += substring_buffer;
@@ -644,7 +708,7 @@ int setup_client_settings(int argc, char *argv[]) {
             return -1;
         }
     }
-    
+
     if (argc == 5) {
         if (!strcmp(argv[3], "-n")) {
             ADDRESS = argv[4];
@@ -685,10 +749,10 @@ int main(int argc, char *argv[]) {
         command = input[0];
 
         translated_message = translateInput(command, input);
-        if (translated_message == "invalid")
-            cout << "Invalid message format\n";
+        if (translated_message.substr(0, 7) == "Invalid") {
+            cout << translated_message << "\n";;
 
-        else {
+        } else {
             if (command == "login") {
                 if (logged_in) {
                     cout << "First execute the logout command\n";
@@ -698,16 +762,16 @@ int main(int argc, char *argv[]) {
                     temp_pass = input[2];
                     sendUDP(translated_message);
                 }
-        
-            } else if ((command == "logout") || (command == "unregister") || (command == "myauctions") || (command == "ma") 
-                        || (command == "mybids") || (command == "mb")) { 
+
+            } else if ((command == "logout") || (command == "unregister") || (command == "myauctions") || (command == "ma")
+                        || (command == "mybids") || (command == "mb")) {
                 if(!logged_in) {
                 cout << "User not logged in\n";
-                
+
                 } else {
                     sendUDP(translated_message);
                 }
-            
+
             } else if ((command == "list") || (command == "l") || (command == "show_record") || (command == "sr")) {
                 sendUDP(translated_message);
 
@@ -722,7 +786,7 @@ int main(int argc, char *argv[]) {
             } else if (command == "open" || command == "close" || command == "bid" || command == "b" ) {
                 if(!logged_in) {
                 cout << "User not logged in\n";
-                
+
                 } else {
                     createTCPSocket();
                     sendTCP(translated_message);

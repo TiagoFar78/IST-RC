@@ -117,6 +117,17 @@ void show_process_in_terminal(struct sockaddr_in addr, socklen_t addrlen);
     return result;
 }*/
 
+void setSocketTimeout(int socket, int timeoutSeconds) {
+    struct timeval timeout;
+    timeout.tv_sec = timeoutSeconds;
+    timeout.tv_usec = 0;
+
+    if (setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+        perror("Error setting receive timeout");
+        exit(1);
+    }
+}
+
 string add_zeros_before_server(int zeros_amount, int number) {
     string s = "";
     string number_string = to_string(number);
@@ -535,6 +546,8 @@ int tcp_setup() {
         exit(1);
     }
 
+    setSocketTimeout(fd, 5);
+
     if (listen(fd, 5) == -1) {
         exit(1);
     }
@@ -544,7 +557,7 @@ int tcp_setup() {
 
 void execute_tcp(int fd) {
     current_fd = fd;
-
+    struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
     int newfd = accept(fd, (struct sockaddr*)&addr, &addrlen);
     if (newfd == -1) {
@@ -559,12 +572,22 @@ void execute_tcp(int fd) {
     memset(command_buffer, 0, COMMAND_BUFFER_SIZE + 1);
 
     memset(command_buffer, 0, COMMAND_BUFFER_SIZE);
-    read(newfd, command_buffer, COMMAND_BUFFER_SIZE);
+    ssize_t n = read(newfd, command_buffer, COMMAND_BUFFER_SIZE);
+    if (n == -1) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            cout << "Timeout in receiving udp message" << endl;
+            return;
+        } else {
+            perror("Error receiving UDP message");
+            exit(1);
+        }
+
+    }
 
     string command;
     command += command_buffer;
     
-    ssize_t n = BUFFER_SIZE;
+    n = BUFFER_SIZE;
     if (command == OPEN_COMMAND) {
         int file_size_index = 7;
         int total_data = 0;
@@ -574,8 +597,14 @@ void execute_tcp(int fd) {
             memset(buffer, 0, BUFFER_SIZE);
             n = read(newfd, buffer, BUFFER_SIZE);
             if (n == -1) {
-                printf("Erro nesta bomba - nao leu\n");
-                exit(1);
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    cout << "Timeout in receiving udp message" << endl;
+                    return;
+                } else {
+                    perror("Error receiving UDP message");
+                    exit(1);
+                }
+
             }
 
             string substring_buffer(buffer, buffer + n);
@@ -609,8 +638,14 @@ void execute_tcp(int fd) {
             memset(buffer, 0, BUFFER_SIZE);
             n = read(newfd, buffer, BUFFER_SIZE);
             if (n == -1) {
-                printf("Erro nesta bomba - nao leu\n");
-                exit(1);
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    cout << "Timeout in receiving udp message" << endl;
+                    return;
+                } else {
+                    perror("Error receiving UDP message");
+                    exit(1);
+                }
+
             }
 
             string substring_buffer(buffer, buffer + n);
@@ -659,6 +694,8 @@ int udp_setup() {
         exit(1);
     }
 
+    setSocketTimeout(fd, 5);
+
     return fd;
 }
 
@@ -672,6 +709,16 @@ void execute_udp(int fd) {
     memset(buffer, 0, UDP_BUFFER_SIZE + 1);
 
     ssize_t n = recvfrom(fd, buffer, UDP_BUFFER_SIZE, 0, (struct sockaddr *)&addr, &addrlen);
+    if (n == -1) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            cout << "Timeout in receiving udp message" << endl;
+            return;
+        } else {
+            perror("Error receiving UDP message");
+            exit(1);
+        }
+
+    }
 
     string buffer_string(buffer, buffer + n);
     string reply = process_request(buffer_string);
@@ -685,19 +732,19 @@ void execute_udp(int fd) {
 
 // >-------------------------{ Server }-------------------------<
 
-void send_error_message(string message) {
-    if (is_tcp_socket) {
-        n = write(current_fd, message.c_str(), message.length());
-        if (n == -1) {
-            exit(1);
-       }
-    }
-    else {
-        struct sockaddr_in addr;
-        socklen_t addrlen = sizeof(addr);
-        sendto(current_fd, message.c_str(), message.length(), 0, (struct sockaddr *)&addr, addrlen);
-    }
-}
+// void send_error_message(string message) {
+//     if (is_tcp_socket) {
+//         n = write(current_fd, message.c_str(), message.length());
+//         if (n == -1) {
+//             exit(1);
+//        }
+//     }
+//     else {
+//         struct sockaddr_in addr;
+//         socklen_t addrlen = sizeof(addr);
+//         sendto(current_fd, message.c_str(), message.length(), 0, (struct sockaddr *)&addr, addrlen);
+//     }
+// }
 
 void show_process_in_terminal(struct sockaddr_in addr, socklen_t addrlen) {
     char host[NI_MAXHOST + 1], service[NI_MAXSERV + 1];
@@ -764,7 +811,7 @@ int main(int argc, char *argv[]) {
 
     cout << "Abriu o server\n";
 
-    signal(SIGCHILD, SIG_IGN);
+    signal(SIGCHLD, SIG_IGN);
 
     fd_set inputs, testfds;
     int out_fds;
