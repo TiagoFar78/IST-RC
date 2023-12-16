@@ -769,10 +769,6 @@ void signal_handler(int signumber) {
     if (logged_in) {
         cout << "First execute the logout command\n";
     } else {
-        freeaddrinfo(udp_res);
-        close(udp_socket);
-        freeaddrinfo(tcp_res);
-        close(tcp_socket);
         exit(0);
     }
 }

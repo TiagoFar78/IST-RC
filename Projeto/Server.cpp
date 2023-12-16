@@ -31,6 +31,7 @@ bool is_tcp_socket = false;
 bool is_verbose_mode = false;
 string current_uid = "";
 string current_command = "";
+string current_reply = "";
 int current_fd;
 
 string LOGIN_COMMAND = "LIN";
@@ -99,25 +100,6 @@ void send_error_message(string message);
 // #------------------------------------------------------------------#
 // |                         Useful Functions                         |
 // #------------------------------------------------------------------#
-
-// ISTO PRECISA DE ESTAR COMENTADO PARA CORRER OS TESTES E DESCOMENTADO PARA O RESTO DO FUNCIONAMENTO IG
-/*vector<string> split_string(string input, char delimiter) {
-    vector<string> result;
-    string current;
-
-    for (size_t i = 0; i < input.length(); ++i) {
-        if (input[i] != delimiter) {
-            current += input[i];
-        }
-
-        if (input[i] == delimiter || i == input.length() - 1) {
-            result.push_back(current);
-            current.clear(); 
-        }
-    }
-
-    return result;
-}*/
 
 int setSocketTimeout(int socket, int timeoutSeconds) {
     struct timeval timeout;
@@ -678,6 +660,7 @@ void execute_tcp(int fd) {
     }
 
     string reply = process_request(command);
+    current_reply = reply.substr(0, reply.length() > 7 ? reply.length() : 7);
 
     n = write(newfd, reply.c_str(), reply.length()); 
     if (n == -1) {
@@ -753,6 +736,7 @@ void execute_udp(int fd) {
 
     string buffer_string(buffer, buffer + n);
     string reply = process_request(buffer_string);
+    current_reply = reply.substr(0, reply.length() > 7 ? reply.length() : 7);
 
     n = sendto(fd, reply.c_str(), reply.length(), 0, (struct sockaddr *)&addr, addrlen);
     if (n == -1) {
@@ -799,6 +783,7 @@ void show_process_in_terminal(struct sockaddr_in addr, socklen_t addrlen) {
     cout << "A new request was sent by " << host << ":" << service << endl;
     if (current_command == "") {
         cout << "An invalid command was used" << endl;
+        cout << "And the server replied with: ERR" << endl;
         return;
     }
 
@@ -808,6 +793,10 @@ void show_process_in_terminal(struct sockaddr_in addr, socklen_t addrlen) {
     }
     else {
         cout << " by the user with id " << current_uid << endl;
+    }
+
+    if (current_reply.find('>') == -1) {
+        cout << "And the server replied with: " << current_reply << endl;
     }
 }
 
