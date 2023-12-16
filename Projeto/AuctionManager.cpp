@@ -11,6 +11,8 @@
 using namespace std;
 namespace fs = std::filesystem;
 
+#define SYSTEM_ERROR_CODE -100
+
 // #-------------------------------------------------------------------#
 // |                        Function Definition                        |
 // #-------------------------------------------------------------------#
@@ -180,16 +182,30 @@ int login(int uID, const string& password) {
     login_file_name.append("_login.txt");
 
     if (!file_exists(pass_file_name)) {
-        create_file(pass_file_name);
-        write_on_file(pass_file_name, password, true);
-        create_file(login_file_name);
+        if (create_file(pass_file_name) == -1) {
+            return SYSTEM_ERROR_CODE;
+        }
+
+        if (write_on_file(pass_file_name, password, true) == -1) {
+            return SYSTEM_ERROR_CODE;
+        }
+
+        if (create_file(login_file_name) == -1) {
+            return SYSTEM_ERROR_CODE;
+        }
+
         return 1;
     }
 
     string registered_password;
-    read_from_file(pass_file_name, registered_password);
+    if (read_from_file(pass_file_name, registered_password) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
+    
     if (password == registered_password) {
-        create_file(login_file_name);
+        if (create_file(login_file_name) == -1) {
+            return SYSTEM_ERROR_CODE;
+        }
         return 0;
     }
 
@@ -548,8 +564,6 @@ int open_auction(int uID, const string& name, int start_value, int time_active, 
         return -1;
     }
 
-    // TODO fazer verificações de não ser possível criar auction tipo o name ser só uma palavra
-
     int aID = auctions_count + 1;
     string aID_string = add_zeros_before(3, aID);
     
@@ -557,9 +571,17 @@ int open_auction(int uID, const string& name, int start_value, int time_active, 
     string asset_file_name = "ASDIR/AUCTIONS/" + aID_string + "/" + fname;
     string host_file_name = "ASDIR/USERS/" + uID_string + "/HOSTED/" + aID_string + ".txt";
 
-    create_file(start_file_name);
-    create_file(asset_file_name);
-    create_file(host_file_name);
+    if (create_file(start_file_name) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
+
+    if (create_file(asset_file_name) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
+
+    if (create_file(host_file_name) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
 
     time_t full_time;
     time(&full_time);
@@ -573,9 +595,13 @@ int open_auction(int uID, const string& name, int start_value, int time_active, 
 
     string start_file_content = uID_string + " " + name + " " + fname + " " + to_string(start_value) + 
             " " + to_string(time_active) + " " + time_string + " " + to_string(full_time);
-    write_on_file(start_file_name, start_file_content, true);
+    if (write_on_file(start_file_name, start_file_content, true) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
 
-    write_on_file(asset_file_name, fdata, true);
+    if (write_on_file(asset_file_name, fdata, true) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
 
     return aID;
 }
@@ -609,11 +635,15 @@ int close(int aID) {
         return -4;
     }
 
-    create_file(end_file_name);
+    if (create_file(end_file_name) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
 
     string start_file_name = "ASDIR/AUCTIONS/" + aID_string + "/START_" + aID_string + ".txt";
     string start_file_contents;
-    read_from_file(start_file_name, start_file_contents);
+    if (read_from_file(start_file_name, start_file_contents) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
 
     vector<string> contents_arguments = split_string(start_file_contents, ' ');
 
@@ -640,7 +670,9 @@ int close(int aID) {
             add_zeros_before(2, end_date_time->tm_sec);
 
     string end_file_contents = end_date_time_string + " " + add_zeros_before(5, seconds_until_end);
-    write_on_file(end_file_name, end_file_contents, true);
+    if (write_on_file(end_file_name, end_file_contents, true) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
 
     return return_code;
 }
@@ -745,10 +777,14 @@ int bid(int uID, int aID, int value) {
     }
 
     string bidder_file_name = "ASDIR/USERS/" + uID_string + "/BIDDED/" + aID_string + ".txt";
-    create_file(bidder_file_name);
+    if (create_file(bidder_file_name) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
 
     string bid_file_name = "ASDIR/AUCTIONS/" + aID_string + "/BIDS/" + add_zeros_before(6, value) + ".txt";
-    create_file(bid_file_name);
+    if (create_file(bid_file_name) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
     
     time_t full_time;
     time(&full_time);
@@ -763,7 +799,9 @@ int bid(int uID, int aID, int value) {
     
     string contents = uID_string + " " + to_string(value) + " " + time_string + " " + add_zeros_before(5, time_until_bid);
 
-    write_on_file(bid_file_name, contents, true);
+    if (write_on_file(bid_file_name, contents, true) == -1) {
+        return SYSTEM_ERROR_CODE;
+    }
 
     return 0;
 }

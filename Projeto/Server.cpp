@@ -8,6 +8,7 @@
 
 #include <unistd.h>
 #include <cstring>
+#include <csignal>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -70,7 +71,7 @@ string BID_ON_OWN_AUCTION_REPLY = "ILG";
 
 string ERROR_REPLY = "ERR";
 
-string EXCEPTION_LIKE_ERROR = "IT REACHED A SPOT IT NEVER COULD. SERVER CRASHED - Tiago\'s message lol";
+string SERVER_SIDE_ERROR = "-> A server error occured. Try again";
 
 // #------------------------------------------------------------------#
 // |                       Functions Definition                       |
@@ -229,8 +230,7 @@ string process_login_attempt(vector<string> request_arguments) {
         return REGISTERED_REPLY;
     }
 
-    exit(1);
-    return EXCEPTION_LIKE_ERROR;
+    return SERVER_SIDE_ERROR;
 }
 
 string process_logout_attempt(vector<string> request_arguments) {
@@ -258,8 +258,7 @@ string process_logout_attempt(vector<string> request_arguments) {
         return NOT_REGISTERED_REPLY;
     }
 
-    exit(1);
-    return EXCEPTION_LIKE_ERROR;
+    return SERVER_SIDE_ERROR;
 }
 
 string process_unregister_attempt(vector<string> request_arguments) {
@@ -287,8 +286,7 @@ string process_unregister_attempt(vector<string> request_arguments) {
         return NOT_REGISTERED_REPLY;
     }
 
-    exit(1);
-    //return EXCEPTION_LIKE_ERROR;
+    return SERVER_SIDE_ERROR;
 }
 
 string process_list_auctions_target(vector<string> request_arguments) {
@@ -432,8 +430,11 @@ string process_open_attempt(vector<string> request_arguments) {
     else if (return_code == -2) {
         return NOT_LOGGED_IN_REPLY;
     }
+    else if (return_code >= 0) {
+        return OK_REPLY + " " + add_zeros_before_server(3, return_code);
+    }
 
-    return OK_REPLY + " " + add_zeros_before_server(3, return_code);
+    return SERVER_SIDE_ERROR;
 }
 
 string process_close_attempt(vector<string> request_arguments) {
@@ -463,8 +464,11 @@ string process_close_attempt(vector<string> request_arguments) {
     else if (return_code == -4) {
         return AUCTION_ENDED_REPLY;
     }
+    else if (return_code == 0) {
+        return OK_REPLY;
+    }
 
-    return OK_REPLY;
+    return SERVER_SIDE_ERROR;
 }
 
 string process_show_asset(vector<string> request_arguments) {
@@ -511,8 +515,11 @@ string process_bid_attempt(vector<string> request_arguments) {
     else if (return_code == -3) {
         return BID_ON_OWN_AUCTION_REPLY;
     }
+    else if (return_code == 0) {
+        return BID_ACCEPTED_REPLY;
+    }
 
-    return BID_ACCEPTED_REPLY;
+    return SERVER_SIDE_ERROR;
 }
 
 // #------------------------------------------------------------------#
@@ -528,7 +535,7 @@ int tcp_setup() {
 
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
-        exit(1);
+        return -1;
     }
 
     memset(&hints, 0, sizeof(hints)); 
@@ -538,18 +545,18 @@ int tcp_setup() {
 
     int errcode = getaddrinfo(NULL, PORT.c_str(), &hints, &tcp_res);
     if (errcode != 0) {
-        exit(1);
+        return -1;
     }
 
     ssize_t n = bind(fd, tcp_res->ai_addr, tcp_res->ai_addrlen);
     if (n == -1) {
-        exit(1);
+        return -1;
     }
 
     setSocketTimeout(fd, 5);
 
     if (listen(fd, 5) == -1) {
-        exit(1);
+        return -1;
     }
 
     return fd;
@@ -557,6 +564,7 @@ int tcp_setup() {
 
 void execute_tcp(int fd) {
     current_fd = fd;
+
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
     int newfd = accept(fd, (struct sockaddr*)&addr, &addrlen);
@@ -676,7 +684,7 @@ int udp_setup() {
 
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1) {
-        exit(1);
+        return -1;
     }
 
     memset(&hints,0,sizeof(hints));
@@ -686,12 +694,12 @@ int udp_setup() {
 
     int errcode = getaddrinfo(NULL, PORT.c_str(), &hints, &udp_res);
     if (errcode != 0) {
-        exit(1);
+        return -1;
     }
 
     ssize_t n = bind(fd, udp_res->ai_addr, udp_res->ai_addrlen);
     if (n == -1) {
-        exit(1);
+        return -1;
     }
 
     setSocketTimeout(fd, 5);
@@ -731,20 +739,6 @@ void execute_udp(int fd) {
 }
 
 // >-------------------------{ Server }-------------------------<
-
-// void send_error_message(string message) {
-//     if (is_tcp_socket) {
-//         n = write(current_fd, message.c_str(), message.length());
-//         if (n == -1) {
-//             exit(1);
-//        }
-//     }
-//     else {
-//         struct sockaddr_in addr;
-//         socklen_t addrlen = sizeof(addr);
-//         sendto(current_fd, message.c_str(), message.length(), 0, (struct sockaddr *)&addr, addrlen);
-//     }
-// }
 
 void show_process_in_terminal(struct sockaddr_in addr, socklen_t addrlen) {
     char host[NI_MAXHOST + 1], service[NI_MAXSERV + 1];
@@ -819,6 +813,10 @@ int main(int argc, char *argv[]) {
 
     int tcp_fd = tcp_setup();
     int udp_fd = udp_setup();
+    if (tcp_fd == -1 || udp_fd == -1) {
+        cout << "There was a problem setting up either tcp or udp file descriptor. Try again.\n";
+        return 0;
+    }
 
     FD_ZERO(&inputs); 
     FD_SET(udp_fd, &inputs); 

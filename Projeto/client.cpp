@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <csignal>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -724,11 +725,21 @@ int setup_client_settings(int argc, char *argv[]) {
     return 0;
 }
 
+void signal_handler(int signumber) {
+    if (logged_in) {
+        cout << "First execute the logout command\n";
+    } else {
+        exit(0);
+    }
+}
+
 int main(int argc, char *argv[]) {
     if (setup_client_settings(argc, argv)) {
         cout << "Invalid arguments\n";
         return 0;
     }
+
+    signal(SIGINT, signal_handler);
 
     string write_buffer;
     string command;
