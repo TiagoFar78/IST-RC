@@ -799,7 +799,7 @@ int main(int argc, char *argv[]) {
 
         translated_message = translateInput(command, input);
         if (translated_message.substr(0, 3) == "Inv" || translated_message.substr(0, 3) == "Err" ) {
-            cout << translated_message << "\n";;
+            cout << translated_message;
 
         } else {
             if (command == "login") {
@@ -855,8 +855,8 @@ int main(int argc, char *argv[]) {
                 cout << "User not logged in\n";
 
                 } else {
-                    int create_udp = createUDPSocket();
-                    if (create_udp == -1) {
+                    int create_tcp = createTCPSocket();
+                    if (create_tcp == -1) {
                         break;
                     }
                     sendTCP(translated_message);
@@ -865,8 +865,8 @@ int main(int argc, char *argv[]) {
                 }
 
             } else if(command == "show_asset" || command == "sa") {
-                int create_udp = createUDPSocket();
-                if (create_udp == -1) {
+                int create_tcp = createTCPSocket();
+                if (create_tcp == -1) {
                     break;
                 }
                 sendTCP(translated_message);
@@ -874,7 +874,7 @@ int main(int argc, char *argv[]) {
                 close(tcp_socket);
 
             } else {
-                cout << "Invalid message format\n";
+                cout << "Invalid message command\n";
             }
         }
     }
