@@ -160,35 +160,35 @@ string translateInput(string command, vector<string> input) {
 
     if (command == "login") {
         if (is_unexpected_login_input(input, true)) {
-            return "Invalid login format";
+            return "Invalid login format\n";
         }
         prefix = "LIN ";
         arguments = input[0] + " " + input[1];
 
     } else if (command == "logout") {
         if (is_unexpected_logout_input(input, true)) {
-            return "Invalid logout format";
+            return "Invalid logout format\n";
         }
         prefix = "LOU ";
         arguments = uid + " " + password;
 
     } else if (command == "unregister") {
         if (is_unexpected_unregister_input(input, true)) {
-            return "Invalid unregister format";
+            return "Invalid unregister format\n";
         }
         prefix = "UNR ";
         arguments = uid + " " + password;
 
     } else if (command == "open") {
         if (is_unexpected_open_input(input, true)) {
-            return "Invalid open format";
+            return "Invalid open format\n";
         }
         prefix = "OPA ";
         string fileContents;
 
         int read_validation = read_from_file(input[1], fileContents);
         if(read_validation == -1) {
-            return "Error: A file error occured. Try again";
+            return "Error: A file error occured. Try again\n";
         }
         
         string fileSize = to_string(getFileSize(input[1]));
@@ -198,48 +198,48 @@ string translateInput(string command, vector<string> input) {
 
     } else if (command == "close") {
         if (is_unexpected_close_input(input, true)) {
-            return "Invalid close format";
+            return "Invalid close format\n";
         }
         prefix = "CLS ";
         arguments = uid + " " + password + " " + input[0];
 
     } else if ((command == "myauctions") || (command == "ma")) {
         if (is_unexpected_list_auctions_target_input(input, true)) {
-            return "Invalid myauctions format";
+            return "Invalid myauctions format\n";
         }
         prefix = "LMA ";
         arguments = uid;
 
     } else if ((command == "mybids") || (command == "mb")) {
         if (is_unexpected_list_bids_target_input(input, true)) {
-            return "Invalid mybids format";
+            return "Invalid mybids format\n";
         }
         prefix = "LMB ";
         arguments = uid;
 
     } else if ((command == "list") || (command == "l")) {
         if (is_unexpected_list_auctions_input(input, true)) {
-            return "Invalid list format";
+            return "Invalid list format\n";
         }
         prefix = "LST";
 
     }  else if ((command == "show_asset") || (command == "sa")) {
         if (is_unexpected_show_asset_input(input, true)) {
-            return "Invalid show_asset format";
+            return "Invalid show_asset format\n";
         }
         prefix = "SAS ";
         arguments = input[0];
 
     } else if ((command == "bid") || (command == "b")) {
         if (is_unexpected_bid_input(input, true)) {
-            return "Invalid bid format";
+            return "Invalid bid format\n";
         }
         prefix = "BID ";
         arguments = uid + " " + password + " " + input[0] + " " + input[1];
 
     }  else if ((command == "show_record") || (command == "sr")) {
         if (is_unexpected_show_record_input(input, true)) {
-            return "Invalid show_record format";
+            return "Invalid show_record format\n";
         }
         prefix = "SRC ";
         arguments = input[0];
@@ -548,12 +548,12 @@ string translateOutput(string message) {
 
             int file_validation = create_file(output[0]);
             if(file_validation == -1) {
-                return "Error: A file error occured. Try again";
+                return "Error: A file error occured. Try again\n";
             }
 
             int write_validation = write_on_file(output[0], content, true);
             if(write_validation == -1) {
-                return "Error: A file error occured. Try again";
+                return "Error: A file error occured. Try again\n";
             }
 
             size_t filesize = stoi(output[1]);
@@ -802,7 +802,7 @@ int main(int argc, char *argv[]) {
         command = input[0];
 
         translated_message = translateInput(command, input);
-        if (translated_message.substr(0, 7) == "Invalid" || translated_message.substr(0, 6) == "Error:" ) {
+        if (translated_message.substr(0, 3) == "Inv" || translated_message.substr(0, 3) == "Err" ) {
             cout << translated_message << "\n";;
 
         } else {
@@ -811,9 +811,15 @@ int main(int argc, char *argv[]) {
                     cout << "First execute the logout command\n";
 
                 } else {
+                    int create_udp = createUDPSocket();
+                    if (create_udp == -1) {
+                        break;
+                    }
                     uid = input[1];
                     temp_pass = input[2];
                     sendUDP(translated_message);
+                    freeaddrinfo(udp_res);
+                    close(udp_socket);
                 }
 
             } else if ((command == "logout") || (command == "unregister") || (command == "myauctions") || (command == "ma")
