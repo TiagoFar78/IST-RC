@@ -71,7 +71,7 @@ string BID_ON_OWN_AUCTION_REPLY = "ILG";
 
 string ERROR_REPLY = "ERR";
 
-string SERVER_SIDE_ERROR = "-> A server error occured. Try again";
+string SERVER_SIDE_ERROR = "-> A server file error occured. Try again";
 
 // #------------------------------------------------------------------#
 // |                       Functions Definition                       |
@@ -119,15 +119,16 @@ void send_error_message(string message);
     return result;
 }*/
 
-void setSocketTimeout(int socket, int timeoutSeconds) {
+int setSocketTimeout(int socket, int timeoutSeconds) {
     struct timeval timeout;
     timeout.tv_sec = timeoutSeconds;
     timeout.tv_usec = 0;
 
     if (setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
-        perror("Error setting receive timeout");
-        exit(1);
+        cout << "Error setting receive timeout\n";
+        return -1;
     }
+    return 0;
 }
 
 string add_zeros_before_server(int zeros_amount, int number) {
@@ -546,17 +547,27 @@ int tcp_setup() {
 
     int errcode = getaddrinfo(NULL, PORT.c_str(), &hints, &tcp_res);
     if (errcode != 0) {
+        close(fd);
         return -1;
     }
 
     ssize_t n = bind(fd, tcp_res->ai_addr, tcp_res->ai_addrlen);
     if (n == -1) {
+        close(fd);
+        freeaddrinfo(tcp_res);
         return -1;
     }
 
-    setSocketTimeout(fd, 5);
+    int socket_timeout = setSocketTimeout(fd, 5);
+    if (socket_timeout == -1) {
+        close(fd);
+        freeaddrinfo(tcp_res);
+        return -1;
+    }
 
     if (listen(fd, 5) == -1) {
+        close(fd);
+        freeaddrinfo(tcp_res);
         return -1;
     }
 
@@ -570,10 +581,15 @@ void execute_tcp(int fd) {
     socklen_t addrlen = sizeof(addr);
     int newfd = accept(fd, (struct sockaddr*)&addr, &addrlen);
     if (newfd == -1) {
-        exit(1);
+        cout << "There was a problem setting up the new tcp file descriptor\n";
+        exit(1); 
     }
 
-    setSocketTimeout(newfd, 5);
+    int socket_timeout = setSocketTimeout(newfd, 5);
+    if(socket_timeout == -1) {
+        cout << "There was a problem setting up the new tcp file descriptor\n";
+        exit(1);
+    }
 
     current_fd = newfd;
 
@@ -695,15 +711,22 @@ int udp_setup() {
 
     int errcode = getaddrinfo(NULL, PORT.c_str(), &hints, &udp_res);
     if (errcode != 0) {
+        close(fd);
         return -1;
     }
 
     ssize_t n = bind(fd, udp_res->ai_addr, udp_res->ai_addrlen);
     if (n == -1) {
+        close(fd);
+        freeaddrinfo(udp_res);
         return -1;
     }
 
-    setSocketTimeout(fd, 5);
+    int socket_timeout = setSocketTimeout(fd, 5);
+    if(socket_timeout == -1) {
+        close(fd);
+        freeaddrinfo(udp_res);
+    }
 
     return fd;
 }
@@ -818,9 +841,19 @@ int setup_server_settings(int argc, char *argv[]) {
     return 0;
 }
 
+int udp_fd, tcp_fd;
+
+void signal_handler(int signumber) {
+    freeaddrinfo(udp_res);
+    close(udp_fd);
+    freeaddrinfo(tcp_res);
+    close(tcp_fd);
+    exit(0);
+}
+
 int main(int argc, char *argv[]) {
     if (setup_server_settings(argc, argv) == -1) {
-        cout << "Invalid arguments\n";
+        cout << "Invalid arguments for starting server\n";
         return 0;
     }
 
@@ -832,8 +865,8 @@ int main(int argc, char *argv[]) {
     int out_fds;
     struct timeval timeout;
 
-    int tcp_fd = tcp_setup();
-    int udp_fd = udp_setup();
+    tcp_fd = tcp_setup();
+    udp_fd = udp_setup();
     if (tcp_fd == -1 || udp_fd == -1) {
         cout << "There was a problem setting up either tcp or udp file descriptor. Try again.\n";
         return 0;
@@ -846,6 +879,8 @@ int main(int argc, char *argv[]) {
     while (true) { 
         testfds = inputs;
 
+        signal(SIGINT, signal_handler);
+
         memset((void *)&timeout, 0, sizeof(timeout));
         timeout.tv_sec=120;
 
@@ -856,14 +891,17 @@ int main(int argc, char *argv[]) {
                 //printf("\n ---------------Timeout event-----------------\n");
                 break;
             case -1:
-                perror("select");
+                perror("select error");
+                freeaddrinfo(tcp_res);
+                close(tcp_fd);
+                freeaddrinfo(udp_res);
+                close(udp_fd);
                 exit(1);
             default:
                 if (FD_ISSET(udp_fd, &testfds)) {
                     pid_t pid = fork();
                     if (pid == -1) {
-                        perror("fork");
-                        exit(1);
+                        perror("fork error");
                     } else if (pid == 0) {
                         is_tcp_socket = false;
                         execute_udp(udp_fd);
@@ -873,8 +911,7 @@ int main(int argc, char *argv[]) {
                 else if (FD_ISSET(tcp_fd, &testfds)) { 
                     pid_t pid = fork();
                     if (pid == -1) {
-                        perror("fork");
-                        exit(1);
+                        perror("fork error");
                     } else if (pid == 0) {
                         is_tcp_socket = true;
                         execute_tcp(tcp_fd);

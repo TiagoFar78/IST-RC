@@ -74,7 +74,9 @@ string add_zeros_before(int zeros_amount, int number) {
 
 int count_folder_entries(string folder_path) {
     struct dirent** trash; // TODO como mandar isto literalmente para o lixo? Isto serve?
-    return scandir(folder_path.c_str(), &trash, 0, alphasort) - 2; // -2 porque conta com o . e ..
+    int file_count = scandir(folder_path.c_str(), &trash, 0, alphasort) - 2; // -2 porque conta com o . e ..
+    free(trash);
+    return file_count;
 }
 
 // > ---------------------- { File Functions } ---------------------- <

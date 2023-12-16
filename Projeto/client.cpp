@@ -35,15 +35,21 @@ string temp_pass;
 string uid;
 bool logged_in = false;
 
-void setSocketTimeout(int socket, int timeoutSeconds) {
+// #------------------------------------------------------------------#
+// |                         Useful Functions                         |
+// #------------------------------------------------------------------#
+
+int setSocketTimeout(int socket, int timeoutSeconds) {
     struct timeval timeout;
     timeout.tv_sec = timeoutSeconds;
     timeout.tv_usec = 0;
 
     if (setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
-        perror("Error setting receive timeout");
-        exit(1);
+        cout << "Error setting receive timeout\n";
+        return -1;
     }
+
+    return 0;
 }
 
 int read_from_file(const string& file_name, string& buffer) {
@@ -97,14 +103,6 @@ int create_file(const string& file_name) {
     return -1;
 }
 
-int delete_file(const string& file_name) {
-    if (remove(file_name.c_str()) != 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
 int write_on_file(const string& file_name, const string& buffer, bool clear_file) {
     ofstream file;
 
@@ -150,6 +148,10 @@ vector<string> splitString(string input, char delimiter) {
     return result;
 }
 
+// #-------------------------------------------------------------------#
+// |                Input and Output translation                       |
+// #-------------------------------------------------------------------#
+
 string translateInput(string command, vector<string> input) {
 
     input.erase(input.begin());
@@ -184,7 +186,11 @@ string translateInput(string command, vector<string> input) {
         prefix = "OPA ";
         string fileContents;
 
-        read_from_file(input[1], fileContents);
+        int read_validation = read_from_file(input[1], fileContents);
+        if(read_validation == -1) {
+            return "Error: A file error occured. Try again";
+        }
+        
         string fileSize = to_string(getFileSize(input[1]));
 
         arguments = uid + " " + password + " " + input[0] + " " + input[2] + " "
@@ -540,8 +546,15 @@ string translateOutput(string message) {
                 return "Received invalid server reply\n";
             }
 
-            create_file(output[0]);
-            write_on_file(output[0], content, true);
+            int file_validation = create_file(output[0]);
+            if(file_validation == -1) {
+                return "Error: A file error occured. Try again";
+            }
+
+            int write_validation = write_on_file(output[0], content, true);
+            if(write_validation == -1) {
+                return "Error: A file error occured. Try again";
+            }
 
             size_t filesize = stoi(output[1]);
             if(getFileSize(output[0]) != filesize) {
@@ -562,14 +575,18 @@ string translateOutput(string message) {
 
     }
 
-    return "Received invalid server reply\n";
+    return "Received invalid server reply: " +  message + "\n";
 }
 
-void createUDPSocket() {
+// #-------------------------------------------------------------------#
+// |                UDP and TCP methods                                |
+// #-------------------------------------------------------------------#
+
+int createUDPSocket() {
     udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
     if (udp_socket == -1) {
-        printf("Erro neste socket - bruh\n");
-        exit(1);
+        cout << "Error in creating a socket. Try again\n";
+        return -1;
     }
 
     memset(&udp_hints, 0, sizeof udp_hints);
@@ -578,18 +595,27 @@ void createUDPSocket() {
 
     udp_errcode = getaddrinfo(ADDRESS.c_str(), PORT.c_str(), &udp_hints, &udp_res);
     if (udp_errcode != 0) {
-        printf("Erro nesta bomba - deu erro\n");
-        exit(1);
+        cout << "Error in creating a socket. Try again\n";
+        close(udp_socket);
+        return -1;
     }
 
-    setSocketTimeout(udp_socket, 5);
+    int socket_timeout = setSocketTimeout(udp_socket, 5);
+    if(socket_timeout == -1) {
+        cout << "Error in creating a socket. Try again\n";
+        freeaddrinfo(udp_res);
+        close(udp_socket);
+        return -1;
+    }
+
+    return 0;
 }
 
-void createTCPSocket() {
+int createTCPSocket() {
     tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (tcp_socket == -1) {
-        printf("Erro neste socket - bruh\n");
-        exit(1);
+        cout << "Error in creating a socket. Try again\n";
+        return -1;
     }
 
     memset(&tcp_hints, 0, sizeof tcp_hints);
@@ -598,17 +624,28 @@ void createTCPSocket() {
 
     tcp_errcode = getaddrinfo(ADDRESS.c_str(), PORT.c_str(), &tcp_hints, &tcp_res);
     if (tcp_errcode != 0) {
-        printf("Erro nesta bomba - deu erro\n");
-        exit(1);
+        cout << "Error in creating a socket. Try again\n";
+        close(tcp_socket);
+        return -1;
     }
 
-    setSocketTimeout(tcp_socket, 5);
+    int socket_timeout = setSocketTimeout(tcp_socket, 5);
+    if(socket_timeout == -1) {
+        cout << "Error in creating a socket. Try again\n";
+        freeaddrinfo(tcp_res);
+        close(udp_socket);
+        return -1;
+    }
 
     n = connect(tcp_socket, tcp_res->ai_addr, tcp_res->ai_addrlen);
     if (n == -1) {
-        printf("Erro nesta bomba - nao connectou\n");
-        exit(1);
+        cout << "Error in creating a socket. Try again\n";
+        freeaddrinfo(tcp_res);
+        close(tcp_socket);
+        return -1;
     }
+
+    return 0;
 }
 
 void sendUDP(string message) {
@@ -618,8 +655,8 @@ void sendUDP(string message) {
 
     n = sendto(udp_socket, message.c_str(), message.length(), 0, udp_res->ai_addr, udp_res->ai_addrlen);
     if (n == -1) {
-        printf("Erro nesta bomba - nao escreveu\n");
-        exit(1);
+        cout << "Error in sending message. Try again\n";
+        return;
     }
 
     udp_addrlen = sizeof(udp_addr);
@@ -628,11 +665,11 @@ void sendUDP(string message) {
     n = recvfrom(udp_socket, buffer , 6000, 0, (struct sockaddr*)&udp_addr, &udp_addrlen);
     if (n == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            cout << "Timeout in receiving udp message" << endl;
+            cout << "Timeout in receiving udp message" << "\n";
             return;
         } else {
-            perror("Error receiving UDP message");
-            exit(1);
+            cout << "Error in receiving message. Try again\n";
+            return;
         }
 
     }
@@ -651,10 +688,9 @@ void sendTCP(string message) {
 
     while (totalBytesSent < message.length()) {
         ssize_t n = write(tcp_socket, message.c_str() + totalBytesSent, message.length() - totalBytesSent);
-
         if (n == -1) {
-            printf("Erro nesta bomba - nao escreveu\n");
-            exit(1);
+            cout << "Error in sending message. Try again\n";
+            return;
         }
 
         totalBytesSent += n;
@@ -663,13 +699,14 @@ void sendTCP(string message) {
     n = read(tcp_socket, buffer, 1024);
     if (n == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            cout << "Timeout in receiving tcp message" << endl;
+            cout << "Timeout in receiving tcp message" << "\n";
             return;
         } else {
-            perror("Error receiving TCP message");
-            exit(1);
+            cout << "Error in receiving message. Try again\n";
+            return;
         }
     }
+
     string substring_buffer(buffer, buffer + n);
     full_output += substring_buffer;
     memset(buffer, 0, 1024);
@@ -677,11 +714,11 @@ void sendTCP(string message) {
         n = read(tcp_socket, buffer, 1024);
         if (n == -1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                cout << "Timeout in receiving tcp message" << endl;
+                cout << "Timeout in receiving tcp message" << "\n";
                 return;
             } else {
-                perror("Error receiving TCP message");
-                exit(1);
+                cout << "Error in receiving message. Try again\n";
+                return;
             }
         }
         string substring_buffer(buffer, buffer + n);
@@ -692,6 +729,9 @@ void sendTCP(string message) {
     translated_message = translateOutput(full_output);
     cout << translated_message;
 }
+
+
+// >-------------------------{ Client }-------------------------< 
 
 int setup_client_settings(int argc, char *argv[]) {
     if (argc == 2 || argc == 4) {
@@ -729,13 +769,17 @@ void signal_handler(int signumber) {
     if (logged_in) {
         cout << "First execute the logout command\n";
     } else {
+        freeaddrinfo(udp_res);
+        close(udp_socket);
+        freeaddrinfo(tcp_res);
+        close(tcp_socket);
         exit(0);
     }
 }
 
 int main(int argc, char *argv[]) {
     if (setup_client_settings(argc, argv)) {
-        cout << "Invalid arguments\n";
+        cout << "Invalid arguments for starting client\n";
         return 0;
     }
 
@@ -745,8 +789,6 @@ int main(int argc, char *argv[]) {
     string command;
     string translated_message;
     string arguments;
-
-    createUDPSocket();
 
     while (1) {
         arguments.clear();
@@ -760,7 +802,7 @@ int main(int argc, char *argv[]) {
         command = input[0];
 
         translated_message = translateInput(command, input);
-        if (translated_message.substr(0, 7) == "Invalid") {
+        if (translated_message.substr(0, 7) == "Invalid" || translated_message.substr(0, 6) == "Error:" ) {
             cout << translated_message << "\n";;
 
         } else {
@@ -780,11 +822,23 @@ int main(int argc, char *argv[]) {
                 cout << "User not logged in\n";
 
                 } else {
+                    int create_udp = createUDPSocket();
+                    if (create_udp == -1) {
+                        break;
+                    }
                     sendUDP(translated_message);
+                    freeaddrinfo(udp_res);
+                    close(udp_socket);
                 }
 
             } else if ((command == "list") || (command == "l") || (command == "show_record") || (command == "sr")) {
+                int create_udp = createUDPSocket();
+                if (create_udp == -1) {
+                    break;
+                }
                 sendUDP(translated_message);
+                freeaddrinfo(udp_res);
+                close(udp_socket);
 
             } else if ((command == "exit")) {
                 if (logged_in) {
@@ -799,14 +853,20 @@ int main(int argc, char *argv[]) {
                 cout << "User not logged in\n";
 
                 } else {
-                    createTCPSocket();
+                    int create_udp = createUDPSocket();
+                    if (create_udp == -1) {
+                        break;
+                    }
                     sendTCP(translated_message);
                     freeaddrinfo(tcp_res);
                     close(tcp_socket);
                 }
 
             } else if(command == "show_asset" || command == "sa") {
-                createTCPSocket();
+                int create_udp = createUDPSocket();
+                if (create_udp == -1) {
+                    break;
+                }
                 sendTCP(translated_message);
                 freeaddrinfo(tcp_res);
                 close(tcp_socket);
@@ -816,9 +876,6 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
-    freeaddrinfo(udp_res);
-    close(udp_socket);
 
     return 0;
 }
